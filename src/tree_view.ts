@@ -119,26 +119,72 @@ export namespace vstg
 
         /*** MID LEVEL ***/
 
+        traverseDir(workspaceDir: string, dir: string) {
+            var files: string[] = [];
+            fs.readdirSync(dir).forEach(async (file) => {
+                let fullPath = path.join(dir, file);
+                if (fs.lstatSync(fullPath).isDirectory()) {
+                    files = files.concat( this.traverseDir(workspaceDir ,fullPath));
+                } else {
+                    files.push( fullPath.replace(workspaceDir, "") );
+                }  
+            })
+            return files
+        }
+
         async addEntry(item: tree_item)
         {
             if (!vscode.window.activeTextEditor) {
+                vscode.window.showErrorMessage(`Could not find an open editor. Try to open a file first.`);
                 return
             }
             const currentWorkSpace = await vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
             if (!currentWorkSpace) {
+                vscode.window.showErrorMessage(`No workspace has been found.`);
                 return
             }
+            const workspaceDir = currentWorkSpace.uri.fsPath  + path.sep;
 
-            const allFiles = this.traverseDir(currentWorkSpace.uri.fsPath)
+            // Get labels of opened files in all groups
+            var quickPickItems = []
+            for (const document of vscode.workspace.textDocuments) {
+                quickPickItems.push( {"label" : document.fileName.replace(workspaceDir, "")} );
+            }
 
-            const filesSelections = await vscode.window.showQuickPick(allFiles, {
+            if (quickPickItems.length > 0) {
+                // make a separator for the 'Open Tabs' group
+                const tabsSeparator = {
+                    label: 'Open Tabs',
+                    kind: vscode.QuickPickItemKind.Separator  // this is new
+                };
+
+                // put the 'Open Tabs' separator at the beginning 
+                quickPickItems.unshift(tabsSeparator);
+            }
+
+            const allFiles = this.traverseDir(workspaceDir, currentWorkSpace.uri.fsPath)
+
+            if (allFiles.length > 0) {
+                // make a separator for the 'File' group
+                const fileSeparator = {
+                    label: 'All Files',
+                    kind: vscode.QuickPickItemKind.Separator
+                };
+
+                quickPickItems.push(fileSeparator);
+
+                allFiles.forEach(fName => quickPickItems.push( {"label": fName} ))
+            }
+
+            const filesSelections = await vscode.window.showQuickPick(quickPickItems, {
                 canPickMany: true,
                 placeHolder: "Select files"
             });
 
             if (filesSelections) {
                 // Add to tree
-                for (let path of filesSelections) {
+                for (let selectionObj of filesSelections) {
+                    const path = selectionObj["label"];
                     item?.add_child(new tree_item(path, path, item));
                 }
                 this.m_onDidChangeTreeData.fire(undefined);
@@ -184,18 +230,7 @@ export namespace vstg
             this.m_onDidChangeTreeData.fire(undefined);
         }
 
-        traverseDir(dir: string) {
-            var files: string[] = [];
-            fs.readdirSync(dir).forEach(async (file) => {
-                let fullPath = path.join(dir, file);
-                if (fs.lstatSync(fullPath).isDirectory()) {
-                    files = files.concat( this.traverseDir(fullPath));
-                } else {
-                    files.push(fullPath);
-                }  
-            })
-            return files
-        }
+        
 
         /*** LOW LEVEL ***/
         openTab(item: tree_item)
