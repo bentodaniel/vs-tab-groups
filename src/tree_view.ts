@@ -11,7 +11,8 @@ export namespace vstg
 
         public children: tree_item[] = [];
 
-        constructor(label: string, file: string | null, parent: tree_item | null) {
+        constructor(label: string, file: string | null, parent: tree_item | null) 
+        {
             super(label, vscode.TreeItemCollapsibleState.None);
             this.parent = parent;
             this.file = file;
@@ -19,23 +20,46 @@ export namespace vstg
             this.iconPath = !parent ? undefined : vscode.ThemeIcon.File
         }
 
-        public isRoot() {
+        public isRoot() 
+        {
             return this.parent === null || this.parent === undefined
         }
 
-        public add_child (child : tree_item) {
+        public get_child(child : tree_item)
+        {
+            for(let item of this.children) {
+                if (item.label === child.label && item.file === child.file) {
+                    return item;
+                }
+            }
+            return undefined;
+        }
+
+        public has_child(child : tree_item)
+        {
+            return this.get_child(child) !== undefined
+        }
+
+        public add_child (child : tree_item) 
+        {
             // Only add if this object has no parent (i.e., is a root)
             if (this.isRoot()) {
                 this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
-                this.children.push(child);
+
+                // if there is already this child, ignore
+                const other = this.get_child(child)
+                if (other) {
+                    vscode.window.showWarningMessage(`File with path '${other.file}' has already been added to this group.`);
+                }
+                else {
+                    this.children.push(child);
+                }
             }
         }
 
-        public setIcon(icon_path: string) {
-            this.iconPath = {
-                light: icon_path,
-                dark: icon_path
-            }
+        public setIcon(icon_path: string) 
+        {
+            this.iconPath = { light: icon_path, dark: icon_path }
         }
     }
     
@@ -143,12 +167,12 @@ export namespace vstg
                 vscode.window.showErrorMessage(`No workspace has been found.`);
                 return
             }
-            const workspaceDir = currentWorkSpace.uri.fsPath  + path.sep;
+            const workspaceDir = currentWorkSpace.uri.fsPath;
 
             // Get labels of opened files in all groups
             var quickPickItems = []
             for (const document of vscode.workspace.textDocuments) {
-                quickPickItems.push( {"label" : document.fileName.replace(workspaceDir, "")} );
+                quickPickItems.push( {"label" : document.fileName.replace(workspaceDir + path.sep, "")} );
             }
 
             if (quickPickItems.length > 0) {
@@ -162,7 +186,7 @@ export namespace vstg
                 quickPickItems.unshift(tabsSeparator);
             }
 
-            const allFiles = this.traverseDir(workspaceDir, currentWorkSpace.uri.fsPath)
+            const allFiles = this.traverseDir(workspaceDir + path.sep, workspaceDir)
 
             if (allFiles.length > 0) {
                 // make a separator for the 'File' group
@@ -184,8 +208,9 @@ export namespace vstg
             if (filesSelections) {
                 // Add to tree
                 for (let selectionObj of filesSelections) {
-                    const path = selectionObj["label"];
-                    item?.add_child(new tree_item(path, path, item));
+                    const label = selectionObj["label"];
+                    const file_path = workspaceDir + path.sep + label;
+                    item?.add_child(new tree_item(label, file_path, item));
                 }
                 this.m_onDidChangeTreeData.fire(undefined);
             }
