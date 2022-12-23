@@ -15,8 +15,7 @@ export namespace vstg
             super(label, vscode.TreeItemCollapsibleState.None);
             this.parent = parent;
             this.file = file;
-            this.collapsibleState = vscode.TreeItemCollapsibleState.None;
-            this.contextValue = parent ? "vstg_child_item" : "vstg_root_item";
+            this.collapsibleState = !parent ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None;
         }
 
         public isRoot() {
@@ -26,7 +25,7 @@ export namespace vstg
         public add_child (child : tree_item) {
             // Only add if this object has no parent (i.e., is a root)
             if (this.isRoot()) {
-                this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+                this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
                 this.children.push(child);
             }
         }
@@ -44,17 +43,18 @@ export namespace vstg
         // we register two commands for vscode, item clicked (we'll implement later) and the refresh button.
         constructor() 
         {
-            vscode.commands.registerCommand('vs-tab-groups.addTabGroup', () => this.addTabGroup());
-            vscode.commands.registerCommand('vs-tab-groups.removeTabGroup', (item) => this.removeTabGroup(item));
-            vscode.commands.registerCommand('vs-tab-groups.addEntry', (item) => this.addEntry(item));
-            vscode.commands.registerCommand('vs-tab-groups.item_clicked', (item) => this.item_clicked(item));
+            vscode.commands.registerCommand('vs_tab_groups.addTabGroup', () => this.addTabGroup());
+            vscode.commands.registerCommand('vs_tab_groups.removeTabGroup', (item) => this.removeTabGroup(item));
+            vscode.commands.registerCommand('vs_tab_groups.addEntry', (item) => this.addEntry(item));
+            vscode.commands.registerCommand('vs_tab_groups.item_clicked', (item) => this.item_clicked(item));
         }
 
         public getTreeItem(item: tree_item): vscode.TreeItem|Thenable<vscode.TreeItem> {
             let title = item.label ? item.label.toString() : "";
             let result = new vscode.TreeItem(title, item.collapsibleState);
             // here we add our command which executes our memberfunction
-            result.command = { command: 'vs-tab-groups.item_clicked', title : title, arguments: [item] };
+            result.command = { command: 'vs_tab_groups.item_clicked', title : title, arguments: [item] };
+            result.contextValue = item.isRoot() ? "vstg_root_item" : "vstg_child_item";
             return result;
         }
         
@@ -96,7 +96,7 @@ export namespace vstg
             var index: number = this.m_data.indexOf(item, 0);
             var data_origin = this.m_data
 
-            if (!item.isRoot && item.parent) {
+            if (!item.isRoot() && item.parent) {
                 const p_index: number = this.m_data.indexOf(item.parent, 0);
                 index = this.m_data[p_index].children.indexOf(item, 0);
                 data_origin = this.m_data[p_index].children

@@ -17,50 +17,50 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vs-tab-groups-explorer",
+          "id": "vs-tab-groups-view-container",
           "title": "VS Tab Groups",
           "icon": "resources/tabs.png"
         }
       ]
     },
     "views": {
-      "vs-tab-groups-explorer": [
+      "vs-tab-groups-view-container": [
         {
-          "id": "vs-tab-groups-container",
+          "id": "vs_tab_groups",
           "name": "Tab Groups"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "vs-tab-groups-container",
-        "contents": "No tab groups were found.\nOrganize your workflow using tab groups.\n[Add Tab Group](command:vs-tab-groups.addTabGroup)"
+        "view": "vs_tab_groups",
+        "contents": "No tab groups were found.\nOrganize your workflow using tab groups.\n[Add Tab Group](command:vs_tab_groups.addTabGroup)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "vs-tab-groups.addTabGroup",
-          "when": "view == vs-tab-groups-container",
-          "group": "navigation"
+          "command": "vs_tab_groups.addTabGroup",
+          "when": "view == vs_tab_groups",
+          "group": "navigation@0"
         }
       ],
       "view/item/context": [
         {
-          "command": "vs-tab-groups.addEntry",
-          "when": "view == vs-tab-groups-container",
+          "command": "vs_tab_groups.addEntry",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
           "group": "inline"
         },
         {
-          "command": "vs-tab-groups.removeTabGroup",
-          "when": "view == vs-tab-groups-container",
-          "group": "inline"
+          "command": "vs_tab_groups.removeTabGroup",
+          "when": "view == vs_tab_groups",
+          "group": "inline && vs_tab_groups@0"
         }
       ]
     },
     "commands": [
       {
-        "command": "vs-tab-groups.addTabGroup",
+        "command": "vs_tab_groups.addTabGroup",
         "title": "Add Tab Group",
         "icon": {
           "light": "resources/light/add.png",
@@ -68,7 +68,7 @@
         }
       },
       {
-        "command": "vs-tab-groups.addEntry",
+        "command": "vs_tab_groups.addEntry",
         "title": "Add Tab",
         "icon": {
           "light": "resources/light/add.png",
@@ -76,7 +76,7 @@
         }
       },
       {
-        "command": "vs-tab-groups.removeTabGroup",
+        "command": "vs_tab_groups.removeTabGroup",
         "title": "Remove Tab Group",
         "icon": {
           "light": "resources/light/remove.png",
@@ -84,7 +84,7 @@
         }
       },
       {
-        "command": "vs-tab-groups.item_clicked",
+        "command": "vs_tab_groups.item_clicked",
         "title": "View Tab Group item"
       }
     ]
