@@ -1,0 +1,113 @@
+{
+  "name": "vs-tab-groups",
+  "displayName": "VS Tab Groups",
+  "description": "Create and manage tab groups to improve your development workflow.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vs-tab-groups-explorer",
+          "title": "VS Tab Groups",
+          "icon": "resources/tabs.png"
+        }
+      ]
+    },
+    "views": {
+      "vs-tab-groups-explorer": [
+        {
+          "id": "vs-tab-groups-container",
+          "name": "Tab Groups"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "vs-tab-groups-container",
+        "contents": "No tab groups were found.\nOrganize your workflow using tab groups.\n[Add Tab Group](command:vs-tab-groups.addTabGroup)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vs-tab-groups.addTabGroup",
+          "when": "view == vs-tab-groups-container",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vs-tab-groups.addEntry",
+          "when": "view == vs-tab-groups-container",
+          "group": "inline"
+        },
+        {
+          "command": "vs-tab-groups.removeTabGroup",
+          "when": "view == vs-tab-groups-container",
+          "group": "inline"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vs-tab-groups.addTabGroup",
+        "title": "Add Tab Group",
+        "icon": {
+          "light": "resources/light/add.png",
+          "dark": "resources/dark/add.png"
+        }
+      },
+      {
+        "command": "vs-tab-groups.addEntry",
+        "title": "Add Tab",
+        "icon": {
+          "light": "resources/light/add.png",
+          "dark": "resources/dark/add.png"
+        }
+      },
+      {
+        "command": "vs-tab-groups.removeTabGroup",
+        "title": "Remove Tab Group",
+        "icon": {
+          "light": "resources/light/remove.png",
+          "dark": "resources/dark/remove.png"
+        }
+      },
+      {
+        "command": "vs-tab-groups.item_clicked",
+        "title": "View Tab Group item"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/glob": "^8.0.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.1.0",
+    "typescript": "^4.9.3",
+    "@vscode/test-electron": "^2.2.0"
+  }
+}
