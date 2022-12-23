@@ -16,6 +16,7 @@ export namespace vstg
             this.parent = parent;
             this.file = file;
             this.collapsibleState = !parent ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None;
+            this.iconPath = !parent ? undefined : vscode.ThemeIcon.File
         }
 
         public isRoot() {
@@ -27,6 +28,13 @@ export namespace vstg
             if (this.isRoot()) {
                 this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
                 this.children.push(child);
+            }
+        }
+
+        public setIcon(icon_path: string) {
+            this.iconPath = {
+                light: icon_path,
+                dark: icon_path
             }
         }
     }
@@ -43,9 +51,22 @@ export namespace vstg
         // we register two commands for vscode, item clicked (we'll implement later) and the refresh button.
         constructor() 
         {
+            // Top level, add a new group
             vscode.commands.registerCommand('vs_tab_groups.addTabGroup', () => this.addTabGroup());
-            vscode.commands.registerCommand('vs_tab_groups.removeTabGroup', (item) => this.removeTabGroup(item));
+
+            // Mid level, actions on tab groups
             vscode.commands.registerCommand('vs_tab_groups.addEntry', (item) => this.addEntry(item));
+            vscode.commands.registerCommand('vs_tab_groups.openTabGroup', (item) => this.openTabGroup(item));
+            vscode.commands.registerCommand('vs_tab_groups.closeTabGroup', (item) => this.closeTabGroup(item));
+            vscode.commands.registerCommand('vs_tab_groups.editTabGroupIcon', (item) => this.editTabGroupIcon(item));
+            vscode.commands.registerCommand('vs_tab_groups.removeTabGroup', (item) => this.removeTabGroup(item));
+            
+            // Low level, actions on tabs
+            vscode.commands.registerCommand('vs_tab_groups.openTab', (item) => this.openTab(item));
+            vscode.commands.registerCommand('vs_tab_groups.closeTab', (item) => this.closeTab(item));
+            vscode.commands.registerCommand('vs_tab_groups.removeTab', (item) => this.removeTab(item));
+
+            // General
             vscode.commands.registerCommand('vs_tab_groups.item_clicked', (item) => this.item_clicked(item));
         }
 
@@ -55,10 +76,12 @@ export namespace vstg
             // here we add our command which executes our memberfunction
             result.command = { command: 'vs_tab_groups.item_clicked', title : title, arguments: [item] };
             result.contextValue = item.isRoot() ? "vstg_root_item" : "vstg_child_item";
+            result.iconPath = item.iconPath
             return result;
         }
         
-        public getChildren(element : tree_item | undefined): vscode.ProviderResult<tree_item[]> {
+        public getChildren(element : tree_item | undefined): vscode.ProviderResult<tree_item[]> 
+        {
             if (element === undefined) {
                 return this.m_data;
             } else {
@@ -66,7 +89,10 @@ export namespace vstg
             }
         }
 
-        public labelExists(label: string) : boolean {
+        /*** TOP LEVEL ***/
+
+        public labelExists(label: string) : boolean 
+        {
             for (let item of this.m_data) {
                 if (item.label === label) {
                     return true;
@@ -91,35 +117,7 @@ export namespace vstg
 			}
         }
 
-        removeTabGroup(item: tree_item)
-        {
-            var index: number = this.m_data.indexOf(item, 0);
-            var data_origin = this.m_data
-
-            if (!item.isRoot() && item.parent) {
-                const p_index: number = this.m_data.indexOf(item.parent, 0);
-                index = this.m_data[p_index].children.indexOf(item, 0);
-                data_origin = this.m_data[p_index].children
-            }
-
-            if (index > -1) {
-                data_origin.splice(index, 1);
-            }
-            this.m_onDidChangeTreeData.fire(undefined);
-        }
-
-        traverseDir(dir: string) {
-            var files: string[] = [];
-            fs.readdirSync(dir).forEach(async (file) => {
-                let fullPath = path.join(dir, file);
-                if (fs.lstatSync(fullPath).isDirectory()) {
-                    files = files.concat( this.traverseDir(fullPath));
-                } else {
-                    files.push(fullPath);
-                }  
-            })
-            return files
-        }
+        /*** MID LEVEL ***/
 
         async addEntry(item: tree_item)
         {
@@ -146,6 +144,82 @@ export namespace vstg
                 this.m_onDidChangeTreeData.fire(undefined);
             }
         }
+
+        openTabGroup(item: tree_item)
+        {
+
+        }
+
+        closeTabGroup(item: tree_item)
+        {
+
+        }
+
+        async editTabGroupIcon(item: tree_item)
+        {
+            const defaultEmojis = ["🟥", "🟧", "🟨", "🟩", "🟦", "🟪", "🟫", "⬛", "⬜"]
+            const icons = ["red", "orange", "yellow", "green", "blue", "purple", "brown", "black", "white"]
+
+            const iconSelection = await vscode.window.showQuickPick(defaultEmojis, {
+                canPickMany: false,
+                placeHolder: "Select icon"
+            });
+
+            if (iconSelection) {
+                var index: number = defaultEmojis.indexOf(iconSelection, 0);
+                
+                const p: string = path.join(__filename, '..', '..', 'resources', `${icons[index]}_square.png`)
+                item.setIcon(p)
+
+                this.m_onDidChangeTreeData.fire(undefined);
+            }
+        }
+
+        removeTabGroup(item: tree_item)
+        {
+            var index: number = this.m_data.indexOf(item, 0);
+            if (index > -1) {
+                this.m_data.splice(index, 1);
+            }
+            this.m_onDidChangeTreeData.fire(undefined);
+        }
+
+        traverseDir(dir: string) {
+            var files: string[] = [];
+            fs.readdirSync(dir).forEach(async (file) => {
+                let fullPath = path.join(dir, file);
+                if (fs.lstatSync(fullPath).isDirectory()) {
+                    files = files.concat( this.traverseDir(fullPath));
+                } else {
+                    files.push(fullPath);
+                }  
+            })
+            return files
+        }
+
+        /*** LOW LEVEL ***/
+        openTab(item: tree_item)
+        {
+
+        }
+
+        closeTab(item: tree_item)
+        {
+
+        }
+
+        removeTab(item: tree_item)
+        {
+            /*
+            if (!item.isRoot() && item.parent) {
+                const p_index: number = this.m_data.indexOf(item.parent, 0);
+                index = this.m_data[p_index].children.indexOf(item, 0);
+                data_origin = this.m_data[p_index].children
+            }
+            */
+        }
+
+        /*** GENERAL ***/
 
         openEditor(filePath: string | null) {
             if (filePath === null || filePath === undefined) {

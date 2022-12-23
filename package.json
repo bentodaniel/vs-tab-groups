@@ -52,9 +52,44 @@
           "group": "inline"
         },
         {
+          "command": "vs_tab_groups.addEntry",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_1@0"
+        },
+        {
+          "command": "vs_tab_groups.openTabGroup",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_2@0"
+        },
+        {
+          "command": "vs_tab_groups.closeTabGroup",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_2@1"
+        },
+        {
+          "command": "vs_tab_groups.editTabGroupIcon",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_3@0"
+        },
+        {
           "command": "vs_tab_groups.removeTabGroup",
-          "when": "view == vs_tab_groups",
-          "group": "inline && vs_tab_groups@0"
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_3@1"
+        },
+        {
+          "command": "vs_tab_groups.openTab",
+          "when": "view == vs_tab_groups && viewItem == vstg_child_item",
+          "group": "vs_tab_groups_2@0"
+        },
+        {
+          "command": "vs_tab_groups.closeTab",
+          "when": "view == vs_tab_groups && viewItem == vstg_child_item",
+          "group": "vs_tab_groups_2@1"
+        },
+        {
+          "command": "vs_tab_groups.removeTab",
+          "when": "view == vs_tab_groups && viewItem == vstg_child_item",
+          "group": "vs_tab_groups_3@0"
         }
       ]
     },
@@ -76,12 +111,36 @@
         }
       },
       {
+        "command": "vs_tab_groups.openTabGroup",
+        "title": "Open Tab Group"
+      },
+      {
+        "command": "vs_tab_groups.closeTabGroup",
+        "title": "Close Tab Group"
+      },
+      {
+        "command": "vs_tab_groups.editTabGroupIcon",
+        "title": "Select Tab Group Icon"
+      },
+      {
         "command": "vs_tab_groups.removeTabGroup",
         "title": "Remove Tab Group",
         "icon": {
           "light": "resources/light/remove.png",
           "dark": "resources/dark/remove.png"
         }
+      },
+      {
+        "command": "vs_tab_groups.openTab",
+        "title": "Open Tab"
+      },
+      {
+        "command": "vs_tab_groups.closeTab",
+        "title": "Close Tab"
+      },
+      {
+        "command": "vs_tab_groups.removeTab",
+        "title": "Remove Tab"
       },
       {
         "command": "vs_tab_groups.item_clicked",
