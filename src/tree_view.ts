@@ -218,7 +218,9 @@ export namespace vstg
 
         openTabGroup(item: tree_item)
         {
-
+            for (let child of item.children) {
+                this.openEditor(child.file)
+            }
         }
 
         closeTabGroup(item: tree_item)
@@ -255,12 +257,11 @@ export namespace vstg
             this.m_onDidChangeTreeData.fire(undefined);
         }
 
-        
-
         /*** LOW LEVEL ***/
+        
         openTab(item: tree_item)
         {
-
+            this.openEditor(item.file)
         }
 
         closeTab(item: tree_item)
@@ -285,19 +286,20 @@ export namespace vstg
             if (filePath === null || filePath === undefined) {
                 return;
             }
-            vscode.workspace.openTextDocument(filePath).then( document => {
+            vscode.workspace.openTextDocument(filePath)
+            .then( document => {
                 // after opening the document, we set the cursor 
                 // and here we make use of the line property which makes imo the code easier to read
-                vscode.window.showTextDocument(document).then( editor => {});
+                vscode.window.showTextDocument(document, {preview: false});
+            })
+            .then(undefined, err => {
+                console.error('An error has occurred :: ', err);
             });
         }
 
-        // this is called when we click an item
+        // only open editor if it is not a root
         item_clicked(item: tree_item) {
-            if (item.isRoot()) {
-                // TODO - we need to open every child element
-            }
-            else {
+            if (!item.isRoot()) {
                 this.openEditor(item.file)
             }
         }

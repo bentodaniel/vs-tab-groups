@@ -47,9 +47,14 @@
       ],
       "view/item/context": [
         {
+          "command": "vs_tab_groups.openTabGroup",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "inline@0"
+        },
+        {
           "command": "vs_tab_groups.addEntry",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
-          "group": "inline"
+          "group": "inline@1"
         },
         {
           "command": "vs_tab_groups.addEntry",
@@ -112,7 +117,11 @@
       },
       {
         "command": "vs_tab_groups.openTabGroup",
-        "title": "Open Tab Group"
+        "title": "Open Tab Group",
+        "icon": {
+          "light": "resources/light/see.png",
+          "dark": "resources/dark/see.png"
+        }
       },
       {
         "command": "vs_tab_groups.closeTabGroup",
