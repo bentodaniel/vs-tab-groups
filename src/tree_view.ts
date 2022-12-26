@@ -6,23 +6,18 @@ export namespace vstg
 {
     class tree_item extends vscode.TreeItem 
     {
-        readonly parent: tree_item | null;
+        readonly isRoot: boolean;
         readonly file: string | null;
 
         public children: tree_item[] = [];
 
-        constructor(label: string, file: string | null, parent: tree_item | null) 
+        constructor(label: string, file: string | null, isRoot: boolean) 
         {
             super(label, vscode.TreeItemCollapsibleState.None);
-            this.parent = parent;
+            this.isRoot = isRoot;
             this.file = file;
-            this.collapsibleState = !parent ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None;
-            this.iconPath = !parent ? undefined : vscode.ThemeIcon.File
-        }
-
-        public isRoot() 
-        {
-            return this.parent === null || this.parent === undefined
+            this.collapsibleState = isRoot ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None;
+            this.iconPath = isRoot ? undefined : vscode.ThemeIcon.File
         }
 
         public get_child(child : tree_item)
@@ -42,8 +37,8 @@ export namespace vstg
 
         public add_child (child : tree_item) 
         {
-            // Only add if this object has no parent (i.e., is a root)
-            if (this.isRoot()) {
+            // Only add if this object is a root
+            if (this.isRoot) {
                 this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
 
                 // if there is already this child, ignore
@@ -61,10 +56,28 @@ export namespace vstg
         {
             this.iconPath = { light: icon_path, dark: icon_path }
         }
+
+        public async toJSON() {
+            var childrenData: any = {}
+
+            // loop the data in this tree and pass it all to json format
+            for (let i = 0; i < this.children.length; i++) {
+                const childJSON = await this.children[i].toJSON();
+                childrenData[`key_${i}`] = childJSON;
+            }
+
+            return {
+                label: this.label,
+                file: this.file,
+                iconPath: this.iconPath,
+                children: childrenData
+            }
+        }
     }
     
     export class tree_view implements vscode.TreeDataProvider<tree_item>
     {
+        private readonly context: vscode.ExtensionContext;
         // m_data holds all tree items 
         private m_data : tree_item [] = [];
         // with the vscode.EventEmitter we can refresh our  tree view
@@ -73,8 +86,10 @@ export namespace vstg
         readonly onDidChangeTreeData ? : vscode.Event<tree_item | undefined> = this.m_onDidChangeTreeData.event;
         
         // we register two commands for vscode, item clicked (we'll implement later) and the refresh button.
-        constructor() 
+        constructor(context: vscode.ExtensionContext) 
         {
+            this.context = context;
+
             // Top level, add a new group
             vscode.commands.registerCommand('vs_tab_groups.addTabGroup', () => this.addTabGroup());
 
@@ -93,13 +108,44 @@ export namespace vstg
             // General
             vscode.commands.registerCommand('vs_tab_groups.item_clicked', (item) => this.item_clicked(item));
         }
+        
+        // Load a tree from this workspace
+        public async load()
+        {
+            const treeData: any = this.context.workspaceState.get('treeData')
 
-        public getTreeItem(item: tree_item): vscode.TreeItem|Thenable<vscode.TreeItem> {
+            for (let key in treeData) {
+                let objValue = treeData[key];
+                
+
+            }
+
+            console.log("load ::", treeData)
+            
+            //  TODO
+            // loop the treeData json into this tree obj
+        }
+
+        public async save()
+        {
+            var treeData: any = {}
+
+            // loop the data in this tree and pass it all to json format
+            for (let i = 0; i < this.m_data.length; i++) {
+                const itemJSON = await this.m_data[i].toJSON();
+                treeData[`key_${i}`] = itemJSON;
+            }
+
+            this.context.workspaceState.update('treeData', treeData)
+        }
+
+        public getTreeItem(item: tree_item): vscode.TreeItem|Thenable<vscode.TreeItem>
+        {
             let title = item.label ? item.label.toString() : "";
             let result = new vscode.TreeItem(title, item.collapsibleState);
             // here we add our command which executes our memberfunction
             result.command = { command: 'vs_tab_groups.item_clicked', title : title, arguments: [item] };
-            result.contextValue = item.isRoot() ? "vstg_root_item" : "vstg_child_item";
+            result.contextValue = item.isRoot ? "vstg_root_item" : "vstg_child_item";
             result.iconPath = item.iconPath
             return result;
         }
@@ -115,7 +161,7 @@ export namespace vstg
 
         /*** TOP LEVEL ***/
 
-        public labelExists(label: string) : boolean 
+        labelExists(label: string) : boolean 
         {
             for (let item of this.m_data) {
                 if (item.label === label) {
@@ -136,7 +182,7 @@ export namespace vstg
                     vscode.window.showErrorMessage(`Can not have two tab groups with name '${input}'`);
                     return
                 }
-				this.m_data.push(new tree_item(input, null, null));
+				this.m_data.push(new tree_item(input, null, true));
                 this.m_onDidChangeTreeData.fire(undefined);
 			}
         }
@@ -210,7 +256,10 @@ export namespace vstg
                 for (let selectionObj of filesSelections) {
                     const label = selectionObj["label"];
                     const file_path = workspaceDir + path.sep + label;
-                    item?.add_child(new tree_item(label, file_path, item));
+
+                    console.log(file_path)
+
+                    item?.add_child(new tree_item(label, file_path, false));
                 }
                 this.m_onDidChangeTreeData.fire(undefined);
             }
@@ -221,6 +270,9 @@ export namespace vstg
             for (let child of item.children) {
                 this.openEditor(child.file)
             }
+
+            this.save()
+            console.log("final :: ", this.context.workspaceState)
         }
 
         closeTabGroup(item: tree_item)
@@ -299,7 +351,7 @@ export namespace vstg
 
         // only open editor if it is not a root
         item_clicked(item: tree_item) {
-            if (!item.isRoot()) {
+            if (!item.isRoot) {
                 this.openEditor(item.file)
             }
         }
