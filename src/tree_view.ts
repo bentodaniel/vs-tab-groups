@@ -52,12 +52,8 @@ export namespace vstg
             }
         }
 
-        public setIcon(icon_path: string) 
+        public async toJSON()
         {
-            this.iconPath = { light: icon_path, dark: icon_path }
-        }
-
-        public async toJSON() {
             var childrenData: any = {}
 
             // loop the data in this tree and pass it all to json format
@@ -69,9 +65,31 @@ export namespace vstg
             return {
                 label: this.label,
                 file: this.file,
+                isRoot: this.isRoot,
                 iconPath: this.iconPath,
                 children: childrenData
             }
+        }
+
+        public static async fromJSON(data: any)
+        {
+            const label = data["label"];
+            const file_path = data["file"];
+            const isRoot = data["isRoot"];
+            
+            const item = new tree_item(label, file_path, isRoot);
+
+            if ("iconPath" in data && isRoot){
+                item.iconPath =  data["iconPath"]
+            }
+
+            for (let key in data["children"]) {
+                let objValue = data["children"][key];
+                const child = await tree_item.fromJSON(objValue)
+                item.add_child( child )
+            }
+
+            return item
         }
     }
     
@@ -108,23 +126,6 @@ export namespace vstg
             // General
             vscode.commands.registerCommand('vs_tab_groups.item_clicked', (item) => this.item_clicked(item));
         }
-        
-        // Load a tree from this workspace
-        public async load()
-        {
-            const treeData: any = this.context.workspaceState.get('treeData')
-
-            for (let key in treeData) {
-                let objValue = treeData[key];
-                
-
-            }
-
-            console.log("load ::", treeData)
-            
-            //  TODO
-            // loop the treeData json into this tree obj
-        }
 
         public async save()
         {
@@ -137,6 +138,20 @@ export namespace vstg
             }
 
             this.context.workspaceState.update('treeData', treeData)
+        }
+        
+        // Load a tree from this workspace
+        public async load()
+        {
+            const treeData: any = this.context.workspaceState.get('treeData')
+
+            for (let key in treeData) {
+                let objValue = treeData[key];
+                const item = await tree_item.fromJSON(objValue)
+                this.m_data.push( item )
+            }
+
+            this.m_onDidChangeTreeData.fire(undefined);
         }
 
         public getTreeItem(item: tree_item): vscode.TreeItem|Thenable<vscode.TreeItem>
@@ -185,6 +200,8 @@ export namespace vstg
 				this.m_data.push(new tree_item(input, null, true));
                 this.m_onDidChangeTreeData.fire(undefined);
 			}
+
+            this.save()
         }
 
         /*** MID LEVEL ***/
@@ -262,6 +279,8 @@ export namespace vstg
                     item?.add_child(new tree_item(label, file_path, false));
                 }
                 this.m_onDidChangeTreeData.fire(undefined);
+
+                this.save()
             }
         }
 
@@ -270,9 +289,6 @@ export namespace vstg
             for (let child of item.children) {
                 this.openEditor(child.file)
             }
-
-            this.save()
-            console.log("final :: ", this.context.workspaceState)
         }
 
         closeTabGroup(item: tree_item)
@@ -294,7 +310,7 @@ export namespace vstg
                 var index: number = defaultEmojis.indexOf(iconSelection, 0);
                 
                 const p: string = path.join(__filename, '..', '..', 'resources', `${icons[index]}_square.png`)
-                item.setIcon(p)
+                item.iconPath = { light: p, dark: p }
 
                 this.m_onDidChangeTreeData.fire(undefined);
             }
@@ -307,6 +323,8 @@ export namespace vstg
                 this.m_data.splice(index, 1);
             }
             this.m_onDidChangeTreeData.fire(undefined);
+
+            this.save()
         }
 
         /*** LOW LEVEL ***/
@@ -330,6 +348,8 @@ export namespace vstg
                 data_origin = this.m_data[p_index].children
             }
             */
+
+            this.save()
         }
 
         /*** GENERAL ***/
