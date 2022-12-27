@@ -21,6 +21,14 @@
           "type": "boolean",
           "default": true,
           "description": "Replace currently open tab group when opening another."
+        },
+        "vs-tab-groups.ignorePaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["node_modules/"],
+          "description": "Configure patterns to ignore files and folders when adding files to groups."
         }
       }
     },
