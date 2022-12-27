@@ -4,6 +4,9 @@ import * as path from 'path';
 
 export namespace vstg
 {
+    /**
+     * The tree item class. Represents an item in the explorer tree.
+     */
     class tree_item extends vscode.TreeItem 
     {
         readonly isRoot: boolean;
@@ -11,6 +14,12 @@ export namespace vstg
 
         public children: tree_item[] = [];
 
+        /**
+         * Create a new item
+         * @param label The label to be displayed
+         * @param file The file this item references
+         * @param isRoot A boolean identifying the item as a root or a child
+         */
         constructor(label: string, file: string | null, isRoot: boolean) 
         {
             super(label, vscode.TreeItemCollapsibleState.None);
@@ -20,38 +29,56 @@ export namespace vstg
             this.iconPath = isRoot ? undefined : vscode.ThemeIcon.File
         }
 
-        public get_child(child : tree_item)
+        /**
+         * Get a child from this tree that matches a given item
+         * @param other The item to use as comparison
+         * @returns The child that matches the given item, or undefined.
+         */
+        public get_child(other : tree_item)
         {
             for(let item of this.children) {
-                if (item.label === child.label && item.file === child.file) {
+                if (item.label === other.label && item.file === other.file) {
                     return item;
                 }
             }
             return undefined;
         }
 
-        public has_child(child : tree_item)
+        /**
+         * Check if this item has a child that matches a given item
+         * @param other The item to be checked for
+         * @returns True if this item has a child that matches the given object, or false if otherwise
+         */
+        public has_child(other : tree_item)
         {
-            return this.get_child(child) !== undefined
+            return this.get_child(other) !== undefined
         }
 
-        public add_child (child : tree_item) 
+        /**
+         * Add a child to this item
+         * @param other The item to be added
+         */
+        public add_child (other : tree_item) 
         {
             // Only add if this object is a root
             if (this.isRoot) {
                 this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
 
                 // if there is already this child, ignore
-                const other = this.get_child(child)
-                if (other) {
-                    vscode.window.showWarningMessage(`File with path '${other.file}' has already been added to this group.`);
+                const obj = this.get_child(other)
+                if (obj) {
+                    vscode.window.showWarningMessage(`File with path '${obj.file}' has already been added to this group.`);
                 }
                 else {
-                    this.children.push(child);
+                    this.children.push(other);
                 }
             }
         }
 
+        /**
+         * Convert this item into JSON data
+         * @returns This item's data as a JSON
+         */
         public async toJSON()
         {
             var childrenData: any = {}
@@ -71,6 +98,11 @@ export namespace vstg
             }
         }
 
+        /**
+         * Convert JSON formatted data into a tree item object
+         * @param data The data to be parsed
+         * @returns A new tree_item object
+         */
         public static async fromJSON(data: any)
         {
             const label = data["label"];
@@ -92,7 +124,13 @@ export namespace vstg
             return item
         }
     }
+
+    /****************************************************
+    ****************************************************/
     
+    /**
+     * The tree view class. Represents the explorer tree.
+     */
     export class tree_view implements vscode.TreeDataProvider<tree_item>
     {
         private readonly context: vscode.ExtensionContext;
@@ -103,7 +141,11 @@ export namespace vstg
         // and vscode will access the event by using a readonly onDidChangeTreeData (this member has to be named like here, otherwise vscode doesnt update our treeview.
         readonly onDidChangeTreeData ? : vscode.Event<tree_item | undefined> = this.m_onDidChangeTreeData.event;
         
-        // we register two commands for vscode, item clicked (we'll implement later) and the refresh button.
+        /**
+         * Create a new tree view.
+         * Register all the commands available for this tree.
+         * @param context The context of the extension
+         */
         constructor(context: vscode.ExtensionContext) 
         {
             this.context = context;
@@ -128,6 +170,9 @@ export namespace vstg
             vscode.commands.registerCommand('vs_tab_groups.item_clicked', (item) => this.item_clicked(item));
         }
 
+        /**
+         * Save this tree in the workspace.
+         */
         public async save()
         {
             var treeData: any = {}
@@ -141,7 +186,9 @@ export namespace vstg
             this.context.workspaceState.update('treeData', treeData)
         }
         
-        // Load a tree from this workspace
+        /**
+         * Load a tree from the workspace.
+         */
         public async load()
         {
             const treeData: any = this.context.workspaceState.get('treeData')
@@ -155,6 +202,9 @@ export namespace vstg
             this.m_onDidChangeTreeData.fire(undefined);
         }
 
+        /**
+         * @inheritDoc
+         */
         public getTreeItem(item: tree_item): vscode.TreeItem|Thenable<vscode.TreeItem>
         {
             let title = item.label ? item.label.toString() : "";
@@ -166,6 +216,9 @@ export namespace vstg
             return result;
         }
         
+        /**
+         * @inheritDoc
+         */
         public getChildren(element : tree_item | undefined): vscode.ProviderResult<tree_item[]> 
         {
             if (element === undefined) {
@@ -177,6 +230,11 @@ export namespace vstg
 
         /*** TOP LEVEL ***/
 
+        /**
+         * Check if a label already exists for a parent of this tree
+         * @param label The label to check for
+         * @returns True if an item already uses this label, false if otherwise.
+         */
         labelExists(label: string) : boolean 
         {
             for (let item of this.m_data) {
@@ -187,6 +245,9 @@ export namespace vstg
             return false;
         }
     
+        /**
+         * Create a new group of tabs.
+         */
         async addTabGroup()
         {
             const input = await vscode.window.showInputBox({
@@ -205,6 +266,9 @@ export namespace vstg
             this.save()
         }
 
+        /**
+         * Remove all groups of tabs. Fully clears the tree.
+         */
         removeAllGroups()
         {
             vscode.window
@@ -221,6 +285,12 @@ export namespace vstg
 
         /*** MID LEVEL ***/
 
+        /**
+         * Get all files recursively from a directory
+         * @param workspaceDir The workspace directory. Used to remove common paths from the strings.
+         * @param dir The directory to search.
+         * @returns An array containing all files in the directory.
+         */
         traverseDir(workspaceDir: string, dir: string) {
             var files: string[] = [];
             fs.readdirSync(dir).forEach(async (file) => {
@@ -234,6 +304,10 @@ export namespace vstg
             return files
         }
 
+        /**
+         * Add an entry to a parent item.
+         * @param item The parent item.
+         */
         async addEntry(item: tree_item)
         {
             if (!vscode.window.activeTextEditor) {
@@ -297,6 +371,10 @@ export namespace vstg
             }
         }
 
+        /**
+         * Open the tab group, i.e., all files in the group, in the editor.
+         * @param item The item that represents the root of the group.
+         */
         openTabGroup(item: tree_item)
         {
             for (let child of item.children) {
@@ -304,11 +382,19 @@ export namespace vstg
             }
         }
 
+        /**
+         * Close the tab group, i.e., all files in the group, in the editor.
+         * @param item The item that represents the root of the group.
+         */
         closeTabGroup(item: tree_item)
         {
 
         }
 
+        /**
+         * Change the icon of the group's root.
+         * @param item The item representing the root of the group.
+         */
         async editTabGroupIcon(item: tree_item)
         {
             const defaultEmojis = ["🟥", "🟧", "🟨", "🟩", "🟦", "🟪", "🟫", "⬛", "⬜"]
@@ -329,6 +415,10 @@ export namespace vstg
             }
         }
 
+        /**
+         * Removes the tab group from the tree
+         * @param item The item representing the root of the group. 
+         */
         removeTabGroup(item: tree_item)
         {
             var index: number = this.m_data.indexOf(item, 0);
@@ -342,16 +432,28 @@ export namespace vstg
 
         /*** LOW LEVEL ***/
         
+        /**
+         * Open a tab in the editor.
+         * @param item The item representing the file to be opened.
+         */
         openTab(item: tree_item)
         {
             this.openEditor(item.file)
         }
 
+        /**
+         * Close a tab in the editor.
+         * @param item The item representing the file to be closed.
+         */
         closeTab(item: tree_item)
         {
 
         }
 
+        /**
+         * Remove a tab/file from the group.
+         * @param item The item representing the file to be removed from the group.
+         */
         removeTab(item: tree_item)
         {
             /*
@@ -367,6 +469,10 @@ export namespace vstg
 
         /*** GENERAL ***/
 
+        /**
+         * Open a file in the editor
+         * @param filePath The path of the file to be opened.
+         */
         openEditor(filePath: string | null) {
             if (filePath === null || filePath === undefined) {
                 return;
@@ -382,7 +488,10 @@ export namespace vstg
             });
         }
 
-        // only open editor if it is not a root
+        /**
+         * Open the clicked tab/file in the editor.
+         * @param item The item representing the tab/file that was clicked.
+         */
         item_clicked(item: tree_item) {
             if (!item.isRoot) {
                 this.openEditor(item.file)
