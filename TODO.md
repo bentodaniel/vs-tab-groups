@@ -21,7 +21,7 @@ Create and manage tab groups to improve your development workflow.
   
 - [x] Open a tab
 - [ ] Close tabs
-- [ ] Remove a tab/file from group
+- [x] Remove a tab/file from group
 
 - [x] Open a tab/file when clicked 
 

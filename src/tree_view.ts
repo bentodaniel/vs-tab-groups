@@ -13,6 +13,7 @@ export namespace vstg
         readonly file: string | null;
 
         public children: tree_item[] = [];
+        public parentLabel: string | undefined = undefined;
 
         /**
          * Create a new item
@@ -30,18 +31,32 @@ export namespace vstg
         }
 
         /**
-         * Get a child from this tree that matches a given item
+         * Set the parent's label.
+         * @param pLabel The parent's label
+         */
+        public setParentLabel(pLabel: string) 
+        {
+            if (this.isRoot) {
+                throw new Error('Cannot assign parentLabel to a root object.');
+            }
+            this.parentLabel = pLabel;
+        }
+
+        /**
+         * Get a child's index from this tree that matches a given item
          * @param other The item to use as comparison
          * @returns The child that matches the given item, or undefined.
          */
-        public get_child(other : tree_item)
+        public get_child_index(other : tree_item)
         {
+            let i = 0;
             for(let item of this.children) {
                 if (item.label === other.label && item.file === other.file) {
-                    return item;
+                    return i;
                 }
+                i += 1;
             }
-            return undefined;
+            return -1;
         }
 
         /**
@@ -51,7 +66,7 @@ export namespace vstg
          */
         public has_child(other : tree_item)
         {
-            return this.get_child(other) !== undefined
+            return this.get_child_index(other) > -1
         }
 
         /**
@@ -65,9 +80,9 @@ export namespace vstg
                 this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
 
                 // if there is already this child, ignore
-                const obj = this.get_child(other)
-                if (obj) {
-                    vscode.window.showWarningMessage(`File with path '${obj.file}' has already been added to this group.`);
+                const index = this.get_child_index(other)
+                if (index > -1) {
+                    vscode.window.showWarningMessage(`File with path '${other.file}' has already been added to this group.`);
                 }
                 else {
                     this.children.push(other);
@@ -94,7 +109,8 @@ export namespace vstg
                 file: this.file,
                 isRoot: this.isRoot,
                 iconPath: this.iconPath,
-                children: childrenData
+                children: childrenData,
+                parentLabel: this.parentLabel
             }
         }
 
@@ -111,13 +127,17 @@ export namespace vstg
             
             const item = new tree_item(label, file_path, isRoot);
 
-            if ("iconPath" in data && isRoot){
+            if (isRoot && "iconPath" in data){
                 item.iconPath =  data["iconPath"]
+            }
+
+            if (!isRoot && "parentLabel" in data){
+                item.setParentLabel( data["parentLabel"] )
             }
 
             for (let key in data["children"]) {
                 let objValue = data["children"][key];
-                const child = await tree_item.fromJSON(objValue)
+                const child = await tree_item.fromJSON(objValue);
                 item.add_child( child )
             }
 
@@ -285,14 +305,26 @@ export namespace vstg
 
         /*** MID LEVEL ***/
 
+        /**
+         * Escape a string path pattern
+         * @param s A string representing a path
+         * @returns The path string in a format that is usable in a regex
+         */
         escapeRegExp(s: string) {
-            s = s.replace(/\\/g, '\\\\')    // escape all backslashes
-            s = s.replace(/\./g, '\\.');      // escape all dots
-            s = s.replace(/\//g, '\\\/')    // escape all forward slashes
-            s = s.replace(/\*/g, '.*')      // when used *, the user means anything, i.e., .*
+            s = s.replace(/\\/g, '\\\\');   // escape all backslashes
+            s = s.replace(/\./g, '\\.');    // escape all dots
+            s = s.replace(/\//g, '\\\/');   // escape all forward slashes
+            s = s.replace(/\*/g, '.*');     // when used *, the user means anything, i.e., .*
             return s
         }
 
+        /**
+         * Check if a path should be ignored
+         * @param rootPath The path pointing to the root
+         * @param pathsToIgnore The patterns to ignore
+         * @param currentPath The path to be checked
+         * @returns True if currentPath should be ignored. False if otherwise.
+         */
         shouldIgnorePath(rootPath: string, pathsToIgnore: string[], currentPath: string) {
             for (let pattern of pathsToIgnore) {
                 var complete_path = path.join(rootPath, pattern)
@@ -309,6 +341,7 @@ export namespace vstg
         /**
          * Get all files recursively from a directory
          * @param workspaceDir The workspace directory. Used to remove common paths from the strings.
+         * @param pathsToIgnore The patterns to ignore
          * @param dir The directory to search.
          * @returns An array containing all files in the directory.
          */
@@ -385,21 +418,28 @@ export namespace vstg
                 allFiles.forEach(fName => quickPickItems.push( {"label": fName} ))
             }
 
+            // Display the selection box
             const filesSelections = await vscode.window.showQuickPick(quickPickItems, {
                 canPickMany: true,
                 placeHolder: "Select files"
             });
 
+            // Add to tree if something was selected
             if (filesSelections) {
-                // Add to tree
                 for (let selectionObj of filesSelections) {
                     const label = selectionObj["label"];
                     const file_path = workspaceDir + path.sep + label;
 
-                    item?.add_child(new tree_item(label, file_path, false));
+                    const newChild = new tree_item(label, file_path, false);
+                    if (item.label) {
+                        newChild.setParentLabel(item.label?.toString())
+                    }
+
+                    item?.add_child(newChild);
                 }
                 this.m_onDidChangeTreeData.fire(undefined);
 
+                // Save the tree to the context
                 this.save()
             }
         }
@@ -410,10 +450,13 @@ export namespace vstg
          */
         openTabGroup(item: tree_item)
         {
-            // TODO
-            // if vscode.workspace.getConfiguration().get('vs-tab-groups.replaceTabGroups') is true, 
-            // first, close all
+            // Check if the user wants the other groups to be closed when opening a new one
+            if (vscode.workspace.getConfiguration().get('vs-tab-groups.replaceTabGroups')) {
+                // TODO - close the currently opened tab group
+                // or close everything?
+            }
 
+            // Open the editor for every child of this tree
             for (let child of item.children) {
                 this.openEditor(child.file)
             }
@@ -425,7 +468,7 @@ export namespace vstg
          */
         closeTabGroup(item: tree_item)
         {
-
+            // TODO
         }
 
         /**
@@ -461,10 +504,12 @@ export namespace vstg
             var index: number = this.m_data.indexOf(item, 0);
             if (index > -1) {
                 this.m_data.splice(index, 1);
-            }
-            this.m_onDidChangeTreeData.fire(undefined);
 
-            this.save()
+                this.m_onDidChangeTreeData.fire(undefined);
+
+                // Save the tree to the context
+                this.save()
+            }
         }
 
         /*** LOW LEVEL ***/
@@ -493,17 +538,25 @@ export namespace vstg
          */
         removeTab(item: tree_item)
         {
-            /*
-            if (!item.isRoot() && item.parent) {
-                const p_index: number = this.m_data.indexOf(item.parent, 0);
-                index = this.m_data[p_index].children.indexOf(item, 0);
-                data_origin = this.m_data[p_index].children
+            // Loop through every group in the tree
+            for (let tab_group of this.m_data) {
+                // If the group is not the parent of the item, continue
+                if (tab_group.label !== item.parentLabel) {
+                    continue
+                }
+                // Find the index of the item in the group's children
+                var index: number = tab_group.children.indexOf(item, 0);
+                if (index > -1) {
+                    tab_group.children.splice(index, 1);
+
+                    this.m_onDidChangeTreeData.fire(undefined);
+
+                    // Save the tree to the context
+                    this.save()
+
+                    break
+                }
             }
-            */
-
-            // TODO
-
-            this.save()
         }
 
         /*** GENERAL ***/
