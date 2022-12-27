@@ -285,20 +285,48 @@ export namespace vstg
 
         /*** MID LEVEL ***/
 
+        escapeRegExp(s: string) {
+            s = s.replace(/\\/g, '\\\\')    // escape all backslashes
+            s = s.replace(/\./g, '\\.');      // escape all dots
+            s = s.replace(/\//g, '\\\/')    // escape all forward slashes
+            s = s.replace(/\*/g, '.*')      // when used *, the user means anything, i.e., .*
+            return s
+        }
+
+        shouldIgnorePath(rootPath: string, pathsToIgnore: string[], currentPath: string) {
+            for (let pattern of pathsToIgnore) {
+                var complete_path = path.join(rootPath, pattern)
+                complete_path = this.escapeRegExp(complete_path)
+
+                const regex = new RegExp(complete_path, 'g')
+                if (regex.test(currentPath)) {
+                    return true
+                }
+            }
+            return false;
+        }
+
         /**
          * Get all files recursively from a directory
          * @param workspaceDir The workspace directory. Used to remove common paths from the strings.
          * @param dir The directory to search.
          * @returns An array containing all files in the directory.
          */
-        traverseDir(workspaceDir: string, dir: string) {
+        traverseDir(workspaceDir: string, pathsToIgnore: string[], dir: string) {
             var files: string[] = [];
             fs.readdirSync(dir).forEach(async (file) => {
                 let fullPath = path.join(dir, file);
+
+                // Check if path should be ignored
+                if (this.shouldIgnorePath(workspaceDir, pathsToIgnore, fullPath)){
+                    return
+                }
+
                 if (fs.lstatSync(fullPath).isDirectory()) {
-                    files = files.concat( this.traverseDir(workspaceDir ,fullPath));
+                    files = files.concat( this.traverseDir(workspaceDir, pathsToIgnore, fullPath));
+                    
                 } else {
-                    files.push( fullPath.replace(workspaceDir, "") );
+                    files.push( fullPath.replace(workspaceDir + path.sep, "") );
                 }  
             })
             return files
@@ -338,7 +366,12 @@ export namespace vstg
                 quickPickItems.unshift(tabsSeparator);
             }
 
-            const allFiles = this.traverseDir(workspaceDir + path.sep, workspaceDir)
+            const ignorePaths: string[] | undefined = vscode.workspace.getConfiguration().get('vs-tab-groups.ignorePaths')
+            const allFiles = this.traverseDir(
+                workspaceDir, 
+                ignorePaths ? ignorePaths : [], 
+                workspaceDir
+            )
 
             if (allFiles.length > 0) {
                 // make a separator for the 'File' group
@@ -377,6 +410,10 @@ export namespace vstg
          */
         openTabGroup(item: tree_item)
         {
+            // TODO
+            // if vscode.workspace.getConfiguration().get('vs-tab-groups.replaceTabGroups') is true, 
+            // first, close all
+
             for (let child of item.children) {
                 this.openEditor(child.file)
             }
@@ -447,7 +484,7 @@ export namespace vstg
          */
         closeTab(item: tree_item)
         {
-
+            this.closeEditor(item.file)
         }
 
         /**
@@ -464,6 +501,8 @@ export namespace vstg
             }
             */
 
+            // TODO
+
             this.save()
         }
 
@@ -473,7 +512,8 @@ export namespace vstg
          * Open a file in the editor
          * @param filePath The path of the file to be opened.
          */
-        openEditor(filePath: string | null) {
+        openEditor(filePath: string | null)
+        {
             if (filePath === null || filePath === undefined) {
                 return;
             }
@@ -484,8 +524,28 @@ export namespace vstg
                 vscode.window.showTextDocument(document, {preview: false});
             })
             .then(undefined, err => {
-                console.error('An error has occurred :: ', err);
+                //console.error('An error has occurred :: ', err);
+                vscode.window.showErrorMessage(`Failed to open document '${filePath}'.`);
             });
+        }
+        
+        /**
+         * Close a file in the editor
+         * @param filePath The path of the file to be closed.
+         */
+        closeEditor(filePath: string | null)
+        {
+            //console.log(vscode.workspace.textDocuments[0].fileName)  //c:\Users\danie\Desktop\a\a\1.txt
+            //console.log(vscode.workspace.textDocuments[0].uri)       //file:///c%3A/Users/danie/Desktop/a/a/1.txt
+
+            // TODO
+
+            /*
+            vscode.window.showTextDocument(entry.uri, {preview: true, preserveFocus: false})
+            .then(() => {
+                return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            });
+            */
         }
 
         /**

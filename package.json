@@ -27,7 +27,7 @@
           "items": {
             "type": "string"
           },
-          "default": ["node_modules/"],
+          "default": ["node_modules"],
           "description": "Configure patterns to ignore files and folders when adding files to groups."
         }
       }
