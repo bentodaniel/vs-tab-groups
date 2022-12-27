@@ -14,6 +14,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "VS Tab Groups",
+      "properties": {
+        "vs-tab-groups.replaceTabGroups": {
+          "type": "boolean",
+          "default": true,
+          "description": "Replace currently open tab group when opening another."
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
