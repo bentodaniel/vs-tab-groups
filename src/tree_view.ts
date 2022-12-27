@@ -110,6 +110,7 @@ export namespace vstg
 
             // Top level, add a new group
             vscode.commands.registerCommand('vs_tab_groups.addTabGroup', () => this.addTabGroup());
+            vscode.commands.registerCommand('vs_tab_groups.removeAllGroups', () => this.removeAllGroups());
 
             // Mid level, actions on tab groups
             vscode.commands.registerCommand('vs_tab_groups.addEntry', (item) => this.addEntry(item));
@@ -204,6 +205,20 @@ export namespace vstg
             this.save()
         }
 
+        removeAllGroups()
+        {
+            vscode.window
+            .showInformationMessage("Are you sure you want to remove all groups?", "Yes", "No")
+            .then(answer => {
+                if (answer === "Yes") {
+                    this.m_data = [];
+                    this.m_onDidChangeTreeData.fire(undefined);
+			
+                    this.save()
+                }
+            })
+        }
+
         /*** MID LEVEL ***/
 
         traverseDir(workspaceDir: string, dir: string) {
@@ -273,8 +288,6 @@ export namespace vstg
                 for (let selectionObj of filesSelections) {
                     const label = selectionObj["label"];
                     const file_path = workspaceDir + path.sep + label;
-
-                    console.log(file_path)
 
                     item?.add_child(new tree_item(label, file_path, false));
                 }

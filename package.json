@@ -43,6 +43,11 @@
           "command": "vs_tab_groups.addTabGroup",
           "when": "view == vs_tab_groups",
           "group": "navigation@0"
+        },
+        {
+          "command": "vs_tab_groups.removeAllGroups",
+          "when": "view == vs_tab_groups",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -105,6 +110,14 @@
         "icon": {
           "light": "resources/light/add.png",
           "dark": "resources/dark/add.png"
+        }
+      },
+      {
+        "command": "vs_tab_groups.removeAllGroups",
+        "title": "Clear Tab Groups",
+        "icon": {
+          "light": "resources/light/remove.png",
+          "dark": "resources/dark/remove.png"
         }
       },
       {
