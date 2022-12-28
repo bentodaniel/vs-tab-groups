@@ -7,7 +7,7 @@ export namespace vstg
     /**
      * The tree item class. Represents an item in the explorer tree.
      */
-    class tree_item extends vscode.TreeItem 
+    export class tree_item extends vscode.TreeItem 
     {
         readonly isRoot: boolean;
         readonly file: string | null;
@@ -76,18 +76,33 @@ export namespace vstg
         public add_child (other : tree_item) 
         {
             // Only add if this object is a root
-            if (this.isRoot) {
-                this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
-
-                // if there is already this child, ignore
-                const index = this.get_child_index(other)
-                if (index > -1) {
-                    vscode.window.showWarningMessage(`File with path '${other.file}' has already been added to this group.`);
-                }
-                else {
-                    this.children.push(other);
-                }
+            if (!this.isRoot) {
+                throw new Error('Can not add child to child item.');
             }
+
+            this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+
+            // if there is already this child, ignore
+            const index = this.get_child_index(other)
+            if (index > -1) {
+                vscode.window.showWarningMessage(`File with path '${other.file}' has already been added to this group.`);
+            }
+            else {
+                this.children.push(other);
+            }
+        }
+
+        /**
+         * Remove a child from this item
+         * @param other The item to be removed
+         * @returns True if the child was removed. False otherwise
+         */
+        public remove_child (other : tree_item) 
+        {
+
+            // TODO
+
+            return false
         }
 
         /**

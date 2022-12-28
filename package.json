@@ -2,7 +2,18 @@
   "name": "vs-tab-groups",
   "displayName": "VS Tab Groups",
   "description": "Create and manage tab groups to improve your development workflow.",
+  "keywords": [
+    "productivity",
+    "tabs",
+    "tab groups"
+  ],
+  "icon": "resources/tabs.png",
   "version": "0.0.1",
+  "publisher": "bentodaniel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bentodaniel/vs-tab-groups"
+  },
   "engines": {
     "vscode": "^1.74.0"
   },
