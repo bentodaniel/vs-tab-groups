@@ -414,7 +414,7 @@ export namespace vstg
                 quickPickItems.unshift(tabsSeparator);
             }
 
-            const ignorePaths: string[] | undefined = vscode.workspace.getConfiguration().get('vs-tab-groups.ignorePaths')
+            const ignorePaths: string[] | undefined = vscode.workspace.getConfiguration('vs-tab-groups').get('ignorePaths')
             const allFiles = this.traverseDir(
                 workspaceDir, 
                 ignorePaths ? ignorePaths : [], 
@@ -463,12 +463,12 @@ export namespace vstg
          * Open the tab group, i.e., all files in the group, in the editor.
          * @param item The item that represents the root of the group.
          */
-        openTabGroup(item: tree_item)
+        async openTabGroup(item: tree_item)
         {
-            // Check if the user wants the other groups to be closed when opening a new one
-            if (vscode.workspace.getConfiguration().get('vs-tab-groups.replaceTabGroups')) {
-                // TODO - close the currently opened tab group
-                // or close everything?
+            // Check if the user wants the other tabs to be closed when opening a new group
+            if (vscode.workspace.getConfiguration('vs-tab-groups').get('closeTabsOnOpenGroup')) {
+                // close every open tab
+                await vscode.commands.executeCommand('workbench.action.closeAllEditors')
             }
 
             // Open the editor for every child of this tree
@@ -483,7 +483,9 @@ export namespace vstg
          */
         closeTabGroup(item: tree_item)
         {
-            // TODO
+            for (let child of item.children) {
+                this.closeEditor(child.file)
+            }
         }
 
         /**
@@ -591,29 +593,40 @@ export namespace vstg
                 // and here we make use of the line property which makes imo the code easier to read
                 vscode.window.showTextDocument(document, {preview: false});
             })
-            .then(undefined, err => {
+            //.then(undefined, err => {
                 //console.error('An error has occurred :: ', err);
-                vscode.window.showErrorMessage(`Failed to open document '${filePath}'.`);
-            });
+                //vscode.window.showErrorMessage(`Failed to open document '${filePath}'.`);
+            //});
         }
         
+        findDocmentInWorkSpace(filePath: string | null) {
+            if (!filePath) {
+                return undefined
+            }
+
+            for (let doc of vscode.workspace.textDocuments) {
+                if (doc.fileName === filePath) {
+                    return doc
+                }
+            }
+            return undefined
+        }
+
         /**
          * Close a file in the editor
          * @param filePath The path of the file to be closed.
          */
         closeEditor(filePath: string | null)
         {
-            //console.log(vscode.workspace.textDocuments[0].fileName)  //c:\Users\danie\Desktop\a\a\1.txt
-            //console.log(vscode.workspace.textDocuments[0].uri)       //file:///c%3A/Users/danie/Desktop/a/a/1.txt
+            var document = this.findDocmentInWorkSpace(filePath);
+            if (!document) {
+                return
+            }
 
-            // TODO
-
-            /*
-            vscode.window.showTextDocument(entry.uri, {preview: true, preserveFocus: false})
+            vscode.window.showTextDocument(document.uri, {preview: true, preserveFocus: false})
             .then(() => {
                 return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
             });
-            */
         }
 
         /**

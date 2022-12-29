@@ -15,6 +15,17 @@ suite('TreeView Test Suite', () => {
 		assert.equal(started?.isActive, true);
 	});
 
+	test("Create new tree view", async () => {
+		const ext = vscode.extensions.getExtension("bentodaniel.vs-tab-groups");
+		if (!ext) {
+			throw Error("Could not get extension.")
+		}
+		const extensionContext = await ext.activate();
+
+		const tree_view = new vstg.tree_view(extensionContext);
+
+		//assert.equal()
+	})
 
     // TODO
 

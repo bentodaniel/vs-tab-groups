@@ -28,10 +28,10 @@
     "configuration": {
       "title": "VS Tab Groups",
       "properties": {
-        "vs-tab-groups.replaceTabGroups": {
+        "vs-tab-groups.closeTabsOnOpenGroup": {
           "type": "boolean",
           "default": true,
-          "description": "Replace currently open tab group when opening another."
+          "description": "Close currently open tabs when opening a tab group."
         },
         "vs-tab-groups.ignorePaths": {
           "type": "array",

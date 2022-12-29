@@ -1,6 +1,10 @@
 # VS Tab Groups
 Create and manage tab groups to improve your development workflow.
 
+---
+
+## Features
+
 ### Extension Settings
 - [x] Control whether all open tabs should be replaced when opening a new tab group
 - [x] Exclude certain folders from add file to group
@@ -15,19 +19,36 @@ Create and manage tab groups to improve your development workflow.
 
 - [x] Add tabs/files to a tab group
 - [x] Open a tab group in the editor
-- [ ] Close tab groups
+- [x] Close tab groups
 - [x] Change the icon of a tab group for easier identification
 - [x] Remove a tab group
   
 - [x] Open a tab
-- [ ] Close tabs
+- [x] Close tabs
 - [x] Remove a tab/file from group
 
 - [x] Open a tab/file when clicked 
 
 ### Extension Tests
 - [ ] Create tests for the extension
+  * [x] Test tree_item
+  * [ ] Test tree_view
 
 ### Misc
 - [ ] Create release notes
 - [ ] Update ReadMe
+
+---
+
+## Bugs
+
+### Add items
+- [ ] On startup, not all open tabs will be displayed as open. Vscode needs to register that they are open.
+
+### Open files
+- [ ] When opening a file/group, sometimes an error is thrown
+
+### Close tabs
+- [ ] When closing a group, the last tab is not closed, but can be closed when closing files individually
+- [ ] Closing a tab that is closed, will make the tab pop up and then be closed if the file was opened previously
+- 
