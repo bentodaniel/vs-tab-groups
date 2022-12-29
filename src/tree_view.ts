@@ -490,6 +490,7 @@ export namespace vstg
         closeTabGroup(item: tree_item)
         {
             for (let child of item.children) {
+                console.log(child.file)
                 this.closeEditor(child.file)
             }
         }
@@ -584,6 +585,15 @@ export namespace vstg
 
         /*** GENERAL ***/
 
+        async getOpenDocument(filePath: string) {
+            for (let doc of vscode.workspace.textDocuments) {
+                if (doc.fileName === filePath) {
+                    return doc
+                }
+            }
+            return await vscode.workspace.openTextDocument(filePath)
+        }
+
         /**
          * Open a file in the editor
          * @param filePath The path of the file to be opened.
@@ -593,16 +603,23 @@ export namespace vstg
             if (filePath === null || filePath === undefined) {
                 return;
             }
-            vscode.workspace.openTextDocument(filePath)
+            this.getOpenDocument(filePath)
             .then( document => {
                 // after opening the document, we set the cursor 
                 // and here we make use of the line property which makes imo the code easier to read
-                vscode.window.showTextDocument(document, {preview: false});
+                vscode.window.showTextDocument(document, {preview: false})
+                .then()
+                .then(undefined, err => {
+                    // This is most likely not a problem that needs solving.
+                    // An error is thrown when multiple files are being opened at the same time
+                    //console.error('An error has occurred while trying to show file :: ', err);
+                    //vscode.window.showErrorMessage(`Failed to show document '${filePath}'.`);
+                })
             })
-            //.then(undefined, err => {
-                //console.error('An error has occurred :: ', err);
-                //vscode.window.showErrorMessage(`Failed to open document '${filePath}'.`);
-            //});
+            .then(undefined, err => {
+                //console.error('An error has occurred while trying to open file :: ', err);
+                vscode.window.showErrorMessage(`Failed to open document '${filePath}'.`);
+            })
         }
         
         findDocmentInWorkSpace(filePath: string | null) {

@@ -46,7 +46,7 @@ Create and manage tab groups to improve your development workflow.
 - [x] On startup, not all open tabs will be displayed as open. Vscode needs to register that they are open.
 
 ### Open files
-- [ ] When opening a file/group, sometimes an error is thrown
+- [x] When opening a file/group, sometimes an error is thrown
 
 ### Close tabs
 - [ ] When closing a group, the last tab is not closed, but can be closed when closing files individually
