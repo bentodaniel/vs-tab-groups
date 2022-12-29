@@ -400,7 +400,7 @@ export namespace vstg
             var quickPickItems = []
             
             // Get labels of all open tabs
-            vscode.window.tabGroups.all.flatMap(group => group.tabs.map(tab => {
+            vscode.window.tabGroups.all.forEach(group => group.tabs.forEach(tab => {
                 var label = tab.label
                 if (tab.input instanceof vscode.TabInputText) {
                     label = tab.input.uri.fsPath
@@ -610,21 +610,40 @@ export namespace vstg
                 return undefined
             }
 
+            var editorTab = undefined
+
+            // Find all open tabs
+            vscode.window.tabGroups.all.forEach(group => group.tabs.forEach(tab => {
+                if (!(tab.input instanceof vscode.TabInputText)) {
+                    return
+                }
+                
+                if (tab.input.uri.fsPath === filePath) {
+                    editorTab = tab
+                }
+            }))
+
+            // Tab is not open
+            if (!editorTab) {
+                return undefined
+            }
+
+            // Check if the tab is registered with a text document
             for (let doc of vscode.workspace.textDocuments) {
                 if (doc.fileName === filePath) {
                     return doc
                 }
             }
-            return undefined
+            return vscode.workspace.openTextDocument(filePath)
         }
 
         /**
          * Close a file in the editor
          * @param filePath The path of the file to be closed.
          */
-        closeEditor(filePath: string | null)
+        async closeEditor(filePath: string | null)
         {
-            var document = this.findDocmentInWorkSpace(filePath);
+            var document = await this.findDocmentInWorkSpace(filePath);
             if (!document) {
                 return
             }

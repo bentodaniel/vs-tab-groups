@@ -50,5 +50,5 @@ Create and manage tab groups to improve your development workflow.
 
 ### Close tabs
 - [ ] When closing a group, the last tab is not closed, but can be closed when closing files individually
-- [ ] Closing a tab that is closed, will make the tab pop up and then be closed if the file was opened previously
-- 
+- [x] Closing a tab that is closed, will make the tab pop up and then be closed if the file was opened previously
+- [x] Can not close tabs that are open on startup without re-opening them
