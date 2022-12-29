@@ -397,11 +397,17 @@ export namespace vstg
             }
             const workspaceDir = currentWorkSpace.uri.fsPath;
 
-            // Get labels of opened files in all groups
             var quickPickItems = []
-            for (const document of vscode.workspace.textDocuments) {
-                quickPickItems.push( {"label" : document.fileName.replace(workspaceDir + path.sep, "")} );
-            }
+            
+            // Get labels of all open tabs
+            vscode.window.tabGroups.all.flatMap(group => group.tabs.map(tab => {
+                var label = tab.label
+                if (tab.input instanceof vscode.TabInputText) {
+                    label = tab.input.uri.fsPath
+                    label = label.replace(workspaceDir + path.sep, "")
+                }
+                quickPickItems.push( {"label" : label} );
+            }))
 
             if (quickPickItems.length > 0) {
                 // make a separator for the 'Open Tabs' group

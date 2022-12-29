@@ -43,7 +43,7 @@ Create and manage tab groups to improve your development workflow.
 ## Bugs
 
 ### Add items
-- [ ] On startup, not all open tabs will be displayed as open. Vscode needs to register that they are open.
+- [x] On startup, not all open tabs will be displayed as open. Vscode needs to register that they are open.
 
 ### Open files
 - [ ] When opening a file/group, sometimes an error is thrown
