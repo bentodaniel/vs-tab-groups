@@ -489,10 +489,13 @@ export namespace vstg
          */
         closeTabGroup(item: tree_item)
         {
+            var file_paths: string[] = []
             for (let child of item.children) {
-                console.log(child.file)
-                this.closeEditor(child.file)
+                if (child.file) {
+                    file_paths.push(child.file)
+                }
             }
+            this.closeEditor(file_paths)
         }
 
         /**
@@ -553,7 +556,9 @@ export namespace vstg
          */
         closeTab(item: tree_item)
         {
-            this.closeEditor(item.file)
+            if (item.file){
+                this.closeEditor([item.file])
+            }
         }
 
         /**
@@ -585,36 +590,53 @@ export namespace vstg
 
         /*** GENERAL ***/
 
-        async getOpenDocument(filePath: string) {
-            for (let doc of vscode.workspace.textDocuments) {
-                if (doc.fileName === filePath) {
-                    return doc
+        /**
+         * Gets an open document for a file or opens a new one and returns it
+         * @param filePaths The paths of the files to open
+         * @returns An array of TextDocument with the documents for each of the file paths provided
+         */
+        async getOpenDocuments(filePaths: string[]) {
+            var docs: vscode.TextDocument[] = []
+
+            filePaths.forEach(async fpath => {
+                var found = false
+                vscode.workspace.textDocuments.forEach(doc => {
+                    if (doc.fileName === fpath) {
+                        docs.push(doc)
+                        found = true
+                        return
+                    }
+                })
+
+                if (!found) {
+                    docs.push( await vscode.workspace.openTextDocument(fpath) )
                 }
-            }
-            return await vscode.workspace.openTextDocument(filePath)
+            })
+            return docs
         }
 
         /**
          * Open a file in the editor
          * @param filePath The path of the file to be opened.
          */
-        openEditor(filePath: string | null)
+        async openEditor(filePath: string | null)
         {
             if (filePath === null || filePath === undefined) {
                 return;
             }
-            this.getOpenDocument(filePath)
-            .then( document => {
-                // after opening the document, we set the cursor 
-                // and here we make use of the line property which makes imo the code easier to read
-                vscode.window.showTextDocument(document, {preview: false})
-                .then()
-                .then(undefined, err => {
-                    // This is most likely not a problem that needs solving.
-                    // An error is thrown when multiple files are being opened at the same time
-                    //console.error('An error has occurred while trying to show file :: ', err);
-                    //vscode.window.showErrorMessage(`Failed to show document '${filePath}'.`);
-                })
+
+            this.getOpenDocuments([filePath])
+            .then( documents => {
+                if (documents.length > 0) {
+                    vscode.window.showTextDocument(documents[0], {preview: false})
+                    .then()
+                    .then(undefined, err => {
+                        // This is most likely not a problem that needs solving.
+                        // An error is thrown when multiple files are being opened at the same time
+                        //console.error('An error has occurred while trying to show file :: ', err);
+                        //vscode.window.showErrorMessage(`Failed to show document '${filePath}'.`);
+                    })
+                }
             })
             .then(undefined, err => {
                 //console.error('An error has occurred while trying to open file :: ', err);
@@ -622,12 +644,17 @@ export namespace vstg
             })
         }
         
-        findDocmentInWorkSpace(filePath: string | null) {
-            if (!filePath) {
+        /**
+         * Gets the documents that have tabs open in the editor
+         * @param filePaths An array with the paths of files to check for
+         * @returns An array of TextDocument that are open in tabs
+         */
+        getOpenDocmentsInWorkSpace(filePaths: string[] | null) {
+            if (!filePaths) {
                 return undefined
             }
 
-            var editorTab = undefined
+            var editorTabs: string[] = []
 
             // Find all open tabs
             vscode.window.tabGroups.all.forEach(group => group.tabs.forEach(tab => {
@@ -635,40 +662,35 @@ export namespace vstg
                     return
                 }
                 
-                if (tab.input.uri.fsPath === filePath) {
-                    editorTab = tab
+                // Check if the tab is in the paths
+                if (filePaths.indexOf(tab.input.uri.fsPath) > -1) {
+                    editorTabs.push(tab.input.uri.fsPath)
                 }
             }))
 
-            // Tab is not open
-            if (!editorTab) {
+            // None of the files is open in a tab
+            if (editorTabs.length === 0) {
                 return undefined
             }
 
-            // Check if the tab is registered with a text document
-            for (let doc of vscode.workspace.textDocuments) {
-                if (doc.fileName === filePath) {
-                    return doc
-                }
-            }
-            return vscode.workspace.openTextDocument(filePath)
+            return this.getOpenDocuments(editorTabs)
         }
 
         /**
-         * Close a file in the editor
-         * @param filePath The path of the file to be closed.
+         * Close files in the editor
+         * @param filePaths An array with the paths of the files to be closed.
          */
-        async closeEditor(filePath: string | null)
+        async closeEditor(filePaths: string[] | null)
         {
-            var document = await this.findDocmentInWorkSpace(filePath);
-            if (!document) {
+            var documents = await this.getOpenDocmentsInWorkSpace(filePaths);
+            if (!documents || documents.length === 0) {
                 return
             }
 
-            vscode.window.showTextDocument(document.uri, {preview: true, preserveFocus: false})
-            .then(() => {
-                return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-            });
+            for(let doc of documents) {
+                await vscode.window.showTextDocument(doc, {preview: true, preserveFocus: false})
+                await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            }
         }
 
         /**
