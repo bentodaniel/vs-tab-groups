@@ -36,7 +36,7 @@ Create and manage tab groups to improve your development workflow.
 
 ### Misc
 - [ ] Create release notes
-- [ ] Update ReadMe
+- [x] Update ReadMe
 
 ---
 

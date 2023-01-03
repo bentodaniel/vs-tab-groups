@@ -10,11 +10,11 @@ Create and manage tab groups to improve your development workflow.
 - Remove files from a group
 - Open a group, i.e., all associated files, in the editor
 - Close a group of files previously opened in the editor
-- Save the workspace's tab groups, so you have them ready when you come back to your work.
 
-\!\[feature X\]\(screenshots/feature-x.png\)
+Workspace's tab groups are saved automatically, so you have them ready when you come back to your work.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+
+![Use Showcase](screenshots/vs-tab-groups-showcase.gif)
 
 ## Extension Settings
 
@@ -27,6 +27,7 @@ This extension contributes the following settings:
 
 - Must open a folder to create groups. It is not possible to create groups of individual files.
 - When trying to add files to a group, a tab must be opened. VSCode uses this tab's file path to identify the path to the open folder.
+- When opening a tab group for the first time, it may not open all tabs. This only happens once, therefore, it is not a big issue.
 
 ## Release Notes
 
