@@ -2,6 +2,8 @@
 
 Create and manage tab groups to improve your development workflow.
 
+Extension available at ![https://marketplace.visualstudio.com/items?itemName=bentodaniel.vs-tab-groups](https://marketplace.visualstudio.com/items?itemName=bentodaniel.vs-tab-groups)
+
 ## Features
 
 - Create file groups
