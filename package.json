@@ -40,6 +40,12 @@
           },
           "default": ["node_modules"],
           "description": "Configure patterns to ignore files and folders when adding files to groups."
+        },
+        "vs-tab-groups.expandLevel": {
+          "type": "integer",
+          "enum": [1,2,3],
+          "default": 1,
+          "description": "Configure depth of expansion of groups. Note that a larger depth may have impact on performance."
         }
       }
     },
@@ -56,7 +62,7 @@
       "vs-tab-groups-view-container": [
         {
           "id": "vs_tab_groups",
-          "name": "Tab Groups"
+          "name": ""
         }
       ]
     },
@@ -69,14 +75,24 @@
     "menus": {
       "view/title": [
         {
-          "command": "vs_tab_groups.addTabGroup",
+          "command": "vs_tab_groups.expandAllGroups",
           "when": "view == vs_tab_groups",
           "group": "navigation@0"
         },
         {
-          "command": "vs_tab_groups.removeAllGroups",
+          "command": "vs_tab_groups.collapseAllGroups",
           "when": "view == vs_tab_groups",
           "group": "navigation@1"
+        },
+        {
+          "command": "vs_tab_groups.addTabGroup",
+          "when": "view == vs_tab_groups",
+          "group": "navigation@2"
+        },
+        {
+          "command": "vs_tab_groups.removeAllGroups",
+          "when": "view == vs_tab_groups",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -133,6 +149,22 @@
       ]
     },
     "commands": [
+      {
+        "command": "vs_tab_groups.expandAllGroups",
+        "title": "Expand All Groups",
+        "icon": {
+          "light": "resources/light/expand.png",
+          "dark": "resources/dark/expand.png"
+        }
+      },
+      {
+        "command": "vs_tab_groups.collapseAllGroups",
+        "title": "Collapse All Groups",
+        "icon": {
+          "light": "resources/light/collapse.png",
+          "dark": "resources/dark/collapse.png"
+        }
+      },
       {
         "command": "vs_tab_groups.addTabGroup",
         "title": "Add Tab Group",
