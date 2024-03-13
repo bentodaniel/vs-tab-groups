@@ -28,6 +28,8 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         this.context = context;
 
         // Top level, add a new group
+        vscode.commands.registerCommand("vs_tab_groups.expandAllGroups", () => this.expandAllGroups());
+        vscode.commands.registerCommand("vs_tab_groups.collapseAllGroups", () => this.collapseAllGroups());
         vscode.commands.registerCommand("vs_tab_groups.addTabGroup", () => this.addTabGroup());
         vscode.commands.registerCommand("vs_tab_groups.removeAllGroups", () => this.removeAllGroups());
 
@@ -115,7 +117,12 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         if (this.m_data.includes(element)) {
             return undefined;
         }
-        return undefined;
+        for (let e of this.m_data) {
+            if (e.children.includes(element)) {
+                return e;
+            }
+        }
+        // TODO - this only checks first level of depth
     }
 
     /*** TOP LEVEL ***/
@@ -132,6 +139,26 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             }
         }
         return false;
+    }
+
+    /**
+     * Expand all groups of tabs.
+     */
+    async expandAllGroups() {
+        this.m_data.forEach(e => {
+            if(this.treeView) 
+                this.treeView.reveal(e, {
+                    select: false, 
+                    expand: vscode.workspace.getConfiguration("vs-tab-groups").get("expandLevel")
+                })
+        });
+    }
+
+    /**
+     * Collapse all groups of tabs.
+     */
+    async collapseAllGroups() {
+        vscode.commands.executeCommand(`workbench.actions.treeView.${EXTENSION_ID}.collapseAll`);
     }
 
     /**
