@@ -31,7 +31,7 @@ Create and manage tab groups to improve your development workflow.
 
 ### Extension Tests
 - [ ] Create tests for the extension
-  * [x] Test tree_item
+  * [x] Test TreeItem
   * [ ] Test tree_view
 
 ### Misc

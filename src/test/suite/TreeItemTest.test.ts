@@ -2,7 +2,7 @@ import * as assert from 'assert';
 
 import * as vscode from 'vscode';
 
-import { vstg } from '../../tree_view';
+import { TreeItem } from '../../TreeItem';
 
 suite('TreeItem Test Suite', () => {
 	vscode.window.showInformationMessage('Start all \'TreeItem\' tests.');
@@ -16,7 +16,7 @@ suite('TreeItem Test Suite', () => {
 	});
 
 	test("Create tree root item", async () => {
-		const root_item = new vstg.tree_item("Root", null, true);
+		const root_item = new TreeItem("Root", null, true);
 		assert.equal(root_item.label, "Root");
 		assert.equal(root_item.isRoot, true);
 		assert.equal(root_item.file, null);
@@ -25,7 +25,7 @@ suite('TreeItem Test Suite', () => {
 	})
 
 	test("Create tree child item", async () => {
-		const child_item = new vstg.tree_item("Child", "path/to/file", false);
+		const child_item = new TreeItem("Child", "path/to/file", false);
 		assert.equal(child_item.label, "Child");
 		assert.equal(child_item.isRoot, false);
 		assert.equal(child_item.file, "path/to/file");
@@ -34,7 +34,7 @@ suite('TreeItem Test Suite', () => {
 	})
 
 	test("Try set parent label on root", async () => {
-		const item = new vstg.tree_item("Root", null, true);
+		const item = new TreeItem("Root", null, true);
 		assert.equal(item.parentLabel, undefined);
 		assert.throws(
 			() => { item.setParentLabel("Root's parent") },
@@ -44,15 +44,15 @@ suite('TreeItem Test Suite', () => {
 	})
 
 	test("Set parent label on child", async () => {
-		const child_item = new vstg.tree_item("Child", "path/to/file", false);
+		const child_item = new TreeItem("Child", "path/to/file", false);
 		assert.equal(child_item.parentLabel, undefined);
 		child_item.setParentLabel("Root");
 		assert.equal(child_item.parentLabel, "Root");
 	})
 
 	test("Add child to root", async () => {
-		const root_item = new vstg.tree_item("Root", null, true);
-		const child_item = new vstg.tree_item("Child", "path/to/file", false);
+		const root_item = new TreeItem("Root", null, true);
+		const child_item = new TreeItem("Child", "path/to/file", false);
 
 		root_item.add_child(child_item);
 
@@ -61,8 +61,8 @@ suite('TreeItem Test Suite', () => {
 	})
 
 	test("Try add child to child", async () => {
-		const child_item = new vstg.tree_item("Child", "path/to/file", false);
-		const child_child_item = new vstg.tree_item("Child Child", "path/to/file/child", false);
+		const child_item = new TreeItem("Child", "path/to/file", false);
+		const child_child_item = new TreeItem("Child Child", "path/to/file/child", false);
 		assert.equal(child_item.isRoot, false);
 		assert.throws(
 			() => { child_item.add_child(child_child_item) },
@@ -72,8 +72,8 @@ suite('TreeItem Test Suite', () => {
 	})
 
 	test("Remove child that exists", async () => {
-		const root_item = new vstg.tree_item("Root", null, true);
-		const child_item = new vstg.tree_item("Child", "path/to/file", false);
+		const root_item = new TreeItem("Root", null, true);
+		const child_item = new TreeItem("Child", "path/to/file", false);
 
 		root_item.add_child(child_item);
 
@@ -87,15 +87,15 @@ suite('TreeItem Test Suite', () => {
 	})
 
 	test("Remove child that does not exist", async () => {
-		const root_item = new vstg.tree_item("Root", null, true);
-		const child_item = new vstg.tree_item("Child", "path/to/file", false);
+		const root_item = new TreeItem("Root", null, true);
+		const child_item = new TreeItem("Child", "path/to/file", false);
 
 		root_item.add_child(child_item);
 
 		assert.equal(root_item.children.length, 1);
 		assert.equal(root_item.children[0], child_item);
 
-		const other_item = new vstg.tree_item("Other", "path/to/other/file", false);
+		const other_item = new TreeItem("Other", "path/to/other/file", false);
 		const result = root_item.remove_child(other_item);
 
 		assert.equal(result, false);
@@ -103,7 +103,7 @@ suite('TreeItem Test Suite', () => {
 	})
 	
 	test("Convert item without children to JSON", async () => {
-		const root_item = new vstg.tree_item("Root", null, true);
+		const root_item = new TreeItem("Root", null, true);
 		const dataJSON = await root_item.toJSON();
 
 		assert.equal(Object.keys(dataJSON).length, 6);
@@ -116,8 +116,8 @@ suite('TreeItem Test Suite', () => {
 	})
 
 	test("Convert item with children to JSON", async () => {
-		const root_item = new vstg.tree_item("Root", null, true);
-		const child_item = new vstg.tree_item("Child", "path/to/file", false);
+		const root_item = new TreeItem("Root", null, true);
+		const child_item = new TreeItem("Child", "path/to/file", false);
 
 		root_item.add_child(child_item);
 		child_item.setParentLabel("Root")
@@ -152,7 +152,7 @@ suite('TreeItem Test Suite', () => {
 			children: {},
 			//parentLabel: undefined
 		}
-		const item = await vstg.tree_item.fromJSON(dataJSON);
+		const item = await TreeItem.fromJSON(dataJSON);
 
 		assert.equal(item.label, "Root");
 		assert.equal(item.file, null);
@@ -180,7 +180,7 @@ suite('TreeItem Test Suite', () => {
 			},
 			//parentLabel: undefined
 		}
-		const item = await vstg.tree_item.fromJSON(dataJSON);
+		const item = await TreeItem.fromJSON(dataJSON);
 
 		// Asserts on root
 		assert.equal(item.label, "Root");

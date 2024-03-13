@@ -1,15 +1,19 @@
 // VS Code extensibility API
 import * as vscode from 'vscode';
 
-import { vstg } from './tree_view';
+import { TreeDataProvider } from './TreeDataProvider';
+import { EXTENSION_ID } from './constants';
 
 /**
  * Called when the extension is started
  */
 export function activate(context: vscode.ExtensionContext) {
-	let tree = new vstg.tree_view(context);
-	vscode.window.registerTreeDataProvider('vs_tab_groups', tree);
-	tree.load();
+	let treeDataProvider = new TreeDataProvider(context);
+	const treeView = vscode.window.createTreeView(EXTENSION_ID, {
+		treeDataProvider: treeDataProvider
+	});
+	treeDataProvider.setTreeView(treeView);
+	treeDataProvider.load();
 	return context;
 }
 
