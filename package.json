@@ -38,12 +38,18 @@
           "items": {
             "type": "string"
           },
-          "default": ["node_modules"],
+          "default": [
+            "node_modules"
+          ],
           "description": "Configure patterns to ignore files and folders when adding files to groups."
         },
         "vs-tab-groups.expandLevel": {
           "type": "integer",
-          "enum": [1,2,3],
+          "enum": [
+            1,
+            2,
+            3
+          ],
           "default": 1,
           "description": "Configure depth of expansion of groups. Note that a larger depth may have impact on performance."
         }
@@ -146,6 +152,21 @@
           "when": "view == vs_tab_groups && viewItem == vstg_child_item",
           "group": "vs_tab_groups_3@0"
         }
+      ],
+      "editor/title": [
+        {
+          "command": "vs_tab_groups.addAllToGroup"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "vs_tab_groups.addEntryToGroup"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "vs_tab_groups.addEntryToGroup"
+        }
       ]
     },
     "commands": [
@@ -223,11 +244,19 @@
       },
       {
         "command": "vs_tab_groups.removeTab",
-        "title": "Remove Tab"
+        "title": "Remove Tab from Group"
       },
       {
         "command": "vs_tab_groups.item_clicked",
-        "title": "View Tab Group item"
+        "title": "View Tab Group Item"
+      },
+      {
+        "command": "vs_tab_groups.addEntryToGroup",
+        "title": "Add to Tab Group"
+      },
+      {
+        "command": "vs_tab_groups.addAllToGroup",
+        "title": "Add All Open Tabs to Tab Group"
       }
     ]
   },
@@ -240,16 +269,19 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.2.0",
     "eslint": "^8.28.0",
     "glob": "^8.0.3",
     "mocha": "^10.1.0",
-    "typescript": "^4.9.3",
-    "@vscode/test-electron": "^2.2.0"
+    "typescript": "^4.9.3"
+  },
+  "dependencies": {
+    "vscode-uri": "^3.0.8"
   }
 }
