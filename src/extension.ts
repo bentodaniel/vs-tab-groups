@@ -2,7 +2,7 @@
 import * as vscode from 'vscode';
 
 import { TreeDataProvider } from './TreeDataProvider';
-import { EXTENSION_ID } from './constants';
+import { EXTENSION_ID } from './Util';
 
 /**
  * Called when the extension is started

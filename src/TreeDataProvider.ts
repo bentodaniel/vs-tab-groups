@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { TreeItem } from "./TreeItem";
-import { EXTENSION_ID } from './constants';
+import { EXTENSION_ID, NEW_GROUP_LABEL, ValidationResult, createQuickPickGroupsOptions, getCurrentlyOpenFiles, normalizePath, validateWorkspace } from './Util';
 
 /**
  * The tree view class. Represents the explorer tree.
@@ -34,7 +34,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         vscode.commands.registerCommand("vs_tab_groups.removeAllGroups", () => this.removeAllGroups());
 
         // Mid level, actions on tab groups
-        vscode.commands.registerCommand("vs_tab_groups.addEntry", (item) => this.addEntry(item));
+        vscode.commands.registerCommand("vs_tab_groups.addEntry", (parent) => this.addChildToItem(parent));
         vscode.commands.registerCommand("vs_tab_groups.openTabGroup", (item) => this.openTabGroup(item));
         vscode.commands.registerCommand("vs_tab_groups.closeTabGroup", (item) => this.closeTabGroup(item));
         vscode.commands.registerCommand("vs_tab_groups.editTabGroupIcon", (item) => this.editTabGroupIcon(item));
@@ -47,6 +47,10 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
         // General
         vscode.commands.registerCommand("vs_tab_groups.item_clicked", (item) => this.item_clicked(item));
+
+        // Editor
+        vscode.commands.registerCommand("vs_tab_groups.addEntryToGroup", (item) => this.addEntryToGroup(item));
+        vscode.commands.registerCommand("vs_tab_groups.addAllToGroup", () => this.addAllOpenTabsToGroup());
     }
 
     public setTreeView(treeView: vscode.TreeView<TreeItem>) {
@@ -127,18 +131,22 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
     /*** TOP LEVEL ***/
 
+    getItemIndexByParentLabel(label: string): number {
+        for (let index = 0; index < this.m_data.length; index++) {
+            if (this.m_data[index].label === label) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
     /**
      * Check if a label already exists for a parent of this tree
      * @param label The label to check for
      * @returns True if an item already uses this label, false if otherwise.
      */
     labelExists(label: string): boolean {
-        for (let item of this.m_data) {
-            if (item.label === label) {
-                return true;
-            }
-        }
-        return false;
+        return this.getItemIndexByParentLabel(label) !== -1;
     }
 
     /**
@@ -177,7 +185,6 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             this.m_data.push(new TreeItem(input, null, true));
             this.m_onDidChangeTreeData.fire(undefined);
         }
-
         this.save();
     }
 
@@ -257,35 +264,104 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         return files;
     }
 
+    async addEntryToGroup(item: any) {
+        const validationResult: ValidationResult = validateWorkspace();
+        if (validationResult.hasError) {
+            vscode.window.showErrorMessage(validationResult.error);
+            return;
+        }
+
+        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data);
+
+        vscode.window.showQuickPick(groupLabels, {
+            canPickMany: false,
+            placeHolder: "Select Tab Group",
+        })
+        .then(async (groupSelection) => {
+            if (!groupSelection) return;
+
+            let parent: TreeItem;
+            if (groupSelection.label === NEW_GROUP_LABEL) {
+                await this.addTabGroup();
+                parent = this.m_data[this.m_data.length - 1];
+            }
+            else {
+                let dataIndex = this.getItemIndexByParentLabel(groupSelection.label);
+                parent = this.m_data[dataIndex];
+            }
+
+            let filePath = normalizePath(validationResult.workspaceDir, item._fsPath);
+
+            const newChild = new TreeItem(filePath, item._fsPath, false);
+            newChild.setParentLabel(groupSelection.label);
+
+            parent.add_child(newChild);
+            
+            this.m_onDidChangeTreeData.fire(undefined);
+
+            // Save the tree to the context
+            this.save();
+        });
+    }
+
+    async addAllOpenTabsToGroup() {
+        const validationResult: ValidationResult = validateWorkspace();
+        if (validationResult.hasError) {
+            vscode.window.showErrorMessage(validationResult.error);
+            return;
+        }
+
+        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data);
+
+        vscode.window.showQuickPick(groupLabels, {
+            canPickMany: false,
+            placeHolder: "Select Tab Group",
+        })
+        .then(async (groupSelection) => {
+            if (!groupSelection) return;
+
+            let parent: TreeItem;
+            if (groupSelection.label === NEW_GROUP_LABEL) {
+                await this.addTabGroup();
+                parent = this.m_data[this.m_data.length - 1];
+            }
+            else {
+                let dataIndex = this.getItemIndexByParentLabel(groupSelection.label);
+                parent = this.m_data[dataIndex];
+            }
+
+            const openFiles = getCurrentlyOpenFiles(validationResult.workspaceDir);
+
+            for(let f of openFiles) {
+                let filePath = path.join(validationResult.workspaceDir, f.label);
+
+                const newChild = new TreeItem(f.label, filePath, false);
+                newChild.setParentLabel(groupSelection.label);
+
+                parent.add_child(newChild);
+            }
+            this.m_onDidChangeTreeData.fire(undefined);
+
+            // Save the tree to the context
+            this.save();
+        });
+    }
+
     /**
      * Add an entry to a parent item.
-     * @param item The parent item.
+     * @param parent The parent item.
      */
-    async addEntry(item: TreeItem) {
-        if (!vscode.window.activeTextEditor) {
-            vscode.window.showErrorMessage(`Could not find an open editor. Try to open a file first.`);
+    async addChildToItem(parent: TreeItem) {
+        const validationResult: ValidationResult = validateWorkspace();
+        if (validationResult.hasError) {
+            vscode.window.showErrorMessage(validationResult.error);
             return;
         }
-        const currentWorkSpace = await vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
-        if (!currentWorkSpace) {
-            vscode.window.showErrorMessage(`No workspace has been found.`);
-            return;
-        }
-        const workspaceDir = currentWorkSpace.uri.fsPath;
 
-        var quickPickItems = [];
+        var quickPickItems: any[] = [];
 
         // Get labels of all open tabs
-        vscode.window.tabGroups.all.forEach((group) =>
-            group.tabs.forEach((tab) => {
-                var label = tab.label;
-                if (tab.input instanceof vscode.TabInputText) {
-                    label = tab.input.uri.fsPath;
-                    label = label.replace(workspaceDir + path.sep, "");
-                }
-                quickPickItems.push({ label: label });
-            })
-        );
+        quickPickItems = quickPickItems.concat(getCurrentlyOpenFiles(validationResult.workspaceDir));
 
         if (quickPickItems.length > 0) {
             // make a separator for the 'Open Tabs' group
@@ -299,7 +375,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         }
 
         const ignorePaths: string[] | undefined = vscode.workspace.getConfiguration("vs-tab-groups").get("ignorePaths");
-        const allFiles = this.traverseDir(workspaceDir, ignorePaths ? ignorePaths : [], workspaceDir);
+        const allFiles = this.traverseDir(validationResult.workspaceDir, ignorePaths ? ignorePaths : [], validationResult.workspaceDir);
 
         if (allFiles.length > 0) {
             // make a separator for the 'File' group
@@ -323,14 +399,14 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         if (filesSelections) {
             for (let selectionObj of filesSelections) {
                 const label = selectionObj["label"];
-                const file_path = workspaceDir + path.sep + label;
+                const file_path = validationResult.workspaceDir + path.sep + label;
 
                 const newChild = new TreeItem(label, file_path, false);
-                if (item.label) {
-                    newChild.setParentLabel(item.label?.toString());
+                if (parent.label) {
+                    newChild.setParentLabel(parent.label?.toString());
                 }
 
-                item?.add_child(newChild);
+                parent?.add_child(newChild);
             }
             this.m_onDidChangeTreeData.fire(undefined);
 
@@ -399,14 +475,18 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
      */
     removeTabGroup(item: TreeItem) {
         var index: number = this.m_data.indexOf(item, 0);
-        if (index > -1) {
-            this.m_data.splice(index, 1);
+        if (index <= -1) return;
 
-            this.m_onDidChangeTreeData.fire(undefined);
+        vscode.window.showInformationMessage(`Are you sure you want to remove group '${item.label}'?`, "Yes", "No")
+        .then((answer) => {
+            if (answer === "Yes") {
+                this.m_data.splice(index, 1);
+                this.m_onDidChangeTreeData.fire(undefined);
 
-            // Save the tree to the context
-            this.save();
-        }
+                // Save the tree to the context
+                this.save();
+            }
+        });
     }
 
     /*** LOW LEVEL ***/
@@ -573,4 +653,5 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             this.openEditor(item.file);
         }
     }
+
 }
