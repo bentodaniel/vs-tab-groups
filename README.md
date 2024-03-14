@@ -24,6 +24,7 @@ This extension contributes the following settings:
 
 * `vs-tab-groups.replaceTabGroups`: If true, when opening a tab group, all other open tab groups in the editor will be replaced. If false, the new tab group will be opened, keeping all other tabs in the editor.
 * `vs-tab-groups.ignorePaths`: Configure patterns to ignore files and folders when adding files to groups.
+* `vs-tab-groups.expandLevel`: Configure depth of expansion of groups. (Note that, currently there is only 1 level of depth so changing this value will have no influence).
 
 ## Known Issues
 
@@ -32,6 +33,12 @@ This extension contributes the following settings:
 - When opening a tab group for the first time, it may not open all tabs. This only happens once, therefore, it is not a big issue.
 
 ## Release Notes
+
+### 1.0.1
+
+Resolve requests:
+  - expand and collapse all tab groups;
+  - actions to add current tab or all open tabs to tab group or create a new group;
 
 ### 1.0.0
 
