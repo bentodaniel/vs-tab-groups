@@ -1,1 +1,0 @@
-export const EXTENSION_ID = "vs_tab_groups";

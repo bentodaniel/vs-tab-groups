@@ -1,9 +1,8 @@
 import * as vscode from "vscode";
-import * as vscode_uri from 'vscode-uri'
 import * as fs from "fs";
 import * as path from "path";
 import { TreeItem } from "./TreeItem";
-import { EXTENSION_ID } from './constants';
+import { EXTENSION_ID, NEW_GROUP_LABEL, ValidationResult, createQuickPickGroupsOptions, getCurrentlyOpenFiles, normalizePath, validateWorkspace } from './Util';
 
 /**
  * The tree view class. Represents the explorer tree.
@@ -186,7 +185,6 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             this.m_data.push(new TreeItem(input, null, true));
             this.m_onDidChangeTreeData.fire(undefined);
         }
-
         this.save();
     }
 
@@ -267,34 +265,38 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     async addEntryToGroup(item: any) {
-        if (!vscode.window.activeTextEditor) {
-            vscode.window.showErrorMessage(`Could not find an open editor. Try to open a file first.`);
+        const validationResult: ValidationResult = validateWorkspace();
+        if (validationResult.hasError) {
+            vscode.window.showErrorMessage(validationResult.error);
             return;
         }
-        const currentWorkSpace = await vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
-        if (!currentWorkSpace) {
-            vscode.window.showErrorMessage(`No workspace has been found.`);
-            return;
-        }
-        const workspaceDir = currentWorkSpace.uri.fsPath;
-        let groupLabels: any[] = [];
-        this.m_data.forEach((element) => groupLabels.push({ label: element.label }));
+
+        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data);
+
         vscode.window.showQuickPick(groupLabels, {
-            canPickMany: true,
-            placeHolder: "Select Tab Groups",
+            canPickMany: false,
+            placeHolder: "Select Tab Group",
         })
-        .then(groupSelections => {
-            if (!groupSelections) return;
+        .then(async (groupSelection) => {
+            if (!groupSelection) return;
 
-            for (let group of groupSelections) {
-                let filePath = this.normalizePath(workspaceDir, item._fsPath);
-
-                const newChild = new TreeItem(filePath, item._fsPath, false);
-                newChild.setParentLabel(group.label);
-
-                let dataIndex = this.getItemIndexByParentLabel(group.label);
-                this.m_data[dataIndex].add_child(newChild);
+            let parent: TreeItem;
+            if (groupSelection.label === NEW_GROUP_LABEL) {
+                await this.addTabGroup();
+                parent = this.m_data[this.m_data.length - 1];
             }
+            else {
+                let dataIndex = this.getItemIndexByParentLabel(groupSelection.label);
+                parent = this.m_data[dataIndex];
+            }
+
+            let filePath = normalizePath(validationResult.workspaceDir, item._fsPath);
+
+            const newChild = new TreeItem(filePath, item._fsPath, false);
+            newChild.setParentLabel(groupSelection.label);
+
+            parent.add_child(newChild);
+            
             this.m_onDidChangeTreeData.fire(undefined);
 
             // Save the tree to the context
@@ -303,7 +305,46 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     async addAllOpenTabsToGroup() {
-       
+        const validationResult: ValidationResult = validateWorkspace();
+        if (validationResult.hasError) {
+            vscode.window.showErrorMessage(validationResult.error);
+            return;
+        }
+
+        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data);
+
+        vscode.window.showQuickPick(groupLabels, {
+            canPickMany: false,
+            placeHolder: "Select Tab Group",
+        })
+        .then(async (groupSelection) => {
+            if (!groupSelection) return;
+
+            let parent: TreeItem;
+            if (groupSelection.label === NEW_GROUP_LABEL) {
+                await this.addTabGroup();
+                parent = this.m_data[this.m_data.length - 1];
+            }
+            else {
+                let dataIndex = this.getItemIndexByParentLabel(groupSelection.label);
+                parent = this.m_data[dataIndex];
+            }
+
+            const openFiles = getCurrentlyOpenFiles(validationResult.workspaceDir);
+
+            for(let f of openFiles) {
+                let filePath = path.join(validationResult.workspaceDir, f.label);
+
+                const newChild = new TreeItem(f.label, filePath, false);
+                newChild.setParentLabel(groupSelection.label);
+
+                parent.add_child(newChild);
+            }
+            this.m_onDidChangeTreeData.fire(undefined);
+
+            // Save the tree to the context
+            this.save();
+        });
     }
 
     /**
@@ -311,20 +352,16 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
      * @param parent The parent item.
      */
     async addChildToItem(parent: TreeItem) {
-        if (!vscode.window.activeTextEditor) {
-            vscode.window.showErrorMessage(`Could not find an open editor. Try to open a file first.`);
+        const validationResult: ValidationResult = validateWorkspace();
+        if (validationResult.hasError) {
+            vscode.window.showErrorMessage(validationResult.error);
             return;
         }
-        const currentWorkSpace = await vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
-        if (!currentWorkSpace) {
-            vscode.window.showErrorMessage(`No workspace has been found.`);
-            return;
-        }
-        const workspaceDir = currentWorkSpace.uri.fsPath;
+
         var quickPickItems: any[] = [];
 
         // Get labels of all open tabs
-        quickPickItems = quickPickItems.concat(this.getCurrentlyOpenFiles(workspaceDir));
+        quickPickItems = quickPickItems.concat(getCurrentlyOpenFiles(validationResult.workspaceDir));
 
         if (quickPickItems.length > 0) {
             // make a separator for the 'Open Tabs' group
@@ -338,7 +375,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         }
 
         const ignorePaths: string[] | undefined = vscode.workspace.getConfiguration("vs-tab-groups").get("ignorePaths");
-        const allFiles = this.traverseDir(workspaceDir, ignorePaths ? ignorePaths : [], workspaceDir);
+        const allFiles = this.traverseDir(validationResult.workspaceDir, ignorePaths ? ignorePaths : [], validationResult.workspaceDir);
 
         if (allFiles.length > 0) {
             // make a separator for the 'File' group
@@ -362,7 +399,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         if (filesSelections) {
             for (let selectionObj of filesSelections) {
                 const label = selectionObj["label"];
-                const file_path = workspaceDir + path.sep + label;
+                const file_path = validationResult.workspaceDir + path.sep + label;
 
                 const newChild = new TreeItem(label, file_path, false);
                 if (parent.label) {
@@ -438,14 +475,18 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
      */
     removeTabGroup(item: TreeItem) {
         var index: number = this.m_data.indexOf(item, 0);
-        if (index > -1) {
-            this.m_data.splice(index, 1);
+        if (index <= -1) return;
 
-            this.m_onDidChangeTreeData.fire(undefined);
+        vscode.window.showInformationMessage(`Are you sure you want to remove group '${item.label}'?`, "Yes", "No")
+        .then((answer) => {
+            if (answer === "Yes") {
+                this.m_data.splice(index, 1);
+                this.m_onDidChangeTreeData.fire(undefined);
 
-            // Save the tree to the context
-            this.save();
-        }
+                // Save the tree to the context
+                this.save();
+            }
+        });
     }
 
     /*** LOW LEVEL ***/
@@ -611,33 +652,6 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         if (!item.isRoot) {
             this.openEditor(item.file);
         }
-    }
-
-    getCurrentlyOpenFiles(workspaceDir: string) {
-        var result: any[] = [];
-        vscode.window.tabGroups.all.forEach((group) =>
-            group.tabs.forEach((tab) => {
-                var label = tab.label;
-                if (tab.input instanceof vscode.TabInputText) {
-                    label = tab.input.uri.fsPath;
-                    label = label.replace(workspaceDir + path.sep, "");
-                }
-                result.push({ label: label });
-            })
-        );
-        return result;
-    }
-
-    normalizePath(workDir: string, fileDir: string): string {
-        let p1 = vscode_uri.URI.parse(workDir);
-        let p2 = vscode_uri.URI.parse(fileDir);
-
-        let filePath = p2.path.replace(p1.path, "");
-
-        if (filePath.startsWith('/') || filePath.startsWith('\\')) {
-            filePath = filePath.substring(1)
-        }
-        return filePath;
     }
 
 }
