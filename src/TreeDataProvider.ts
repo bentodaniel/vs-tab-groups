@@ -295,7 +295,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             let filePath = normalizePath(validationResult.workspaceDir, item._fsPath);
 
             const newChild = new TreeItem(filePath, item._fsPath, false);
-            newChild.setParentLabel(groupSelection.label);
+            newChild.setParentLabel(parent.label?.toString()!);
 
             parent.add_child(newChild);
             
@@ -338,7 +338,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
                 let filePath = path.join(validationResult.workspaceDir, f.label);
 
                 const newChild = new TreeItem(f.label, filePath, false);
-                newChild.setParentLabel(groupSelection.label);
+                newChild.setParentLabel(parent.label?.toString()!);
 
                 parent.add_child(newChild);
             }
