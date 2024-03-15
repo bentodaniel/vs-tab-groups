@@ -47,6 +47,8 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
         // General
         vscode.commands.registerCommand("vs_tab_groups.item_clicked", (item) => this.item_clicked(item));
+        vscode.commands.registerCommand("vs_tab_groups.moveUp", (item) => this.moveItemUp(item));
+        vscode.commands.registerCommand("vs_tab_groups.moveDown", (item) => this.moveItemDown(item));
 
         // Editor
         vscode.commands.registerCommand("vs_tab_groups.addEntryToGroup", (item) => this.addEntryToGroup(item));
@@ -490,6 +492,53 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     /*** LOW LEVEL ***/
+
+    private findParentOfItem(item: TreeItem): TreeItem[] {
+        console.log(item);
+        console.log(this.m_data);
+        console.log(this.m_data.filter(e => e.label === item.parentLabel))
+        if (item.isRoot) {
+            return this.m_data;
+        }
+        return this.m_data.filter(e => e.label === item.parentLabel)[0].children;
+    }
+
+    private array_move(arr: any[], old_index: number, new_index: number): any[] {
+        arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
+        return arr;
+    };
+
+    moveItemUp(item: TreeItem): void {
+        const parent = this.findParentOfItem(item);
+        const index = parent.indexOf(item);
+
+        if (index <= 0) {
+            vscode.window.showErrorMessage(`Can't move this item up.`);
+            return;
+        }
+        this.array_move(parent, index, index - 1);
+
+        this.treeView?.reveal(item);
+
+        this.m_onDidChangeTreeData.fire(undefined);
+        this.save();
+    }
+
+    moveItemDown(item: TreeItem): void {
+        const parent = this.findParentOfItem(item);
+        const index = parent.indexOf(item);
+
+        if (index === parent.length - 1) {
+            vscode.window.showErrorMessage(`Can't move this item down.`);
+            return;
+        }
+        this.array_move(parent, index, index + 1);
+
+        this.treeView?.reveal(item);
+
+        this.m_onDidChangeTreeData.fire(undefined);
+        this.save();
+    }
 
     /**
      * Open a tab in the editor.

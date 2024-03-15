@@ -113,44 +113,84 @@
           "group": "inline@1"
         },
         {
+          "command": "vs_tab_groups.moveUp",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "inline@2"
+        },
+        {
+          "command": "vs_tab_groups.moveDown",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "inline@3"
+        },
+        {
           "command": "vs_tab_groups.addEntry",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
           "group": "vs_tab_groups_1@0"
         },
         {
-          "command": "vs_tab_groups.openTabGroup",
+          "command": "vs_tab_groups.moveUp",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
           "group": "vs_tab_groups_2@0"
+        },
+        {
+          "command": "vs_tab_groups.moveDown",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_2@1"
+        },
+        {
+          "command": "vs_tab_groups.openTabGroup",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_3@0"
         },
         {
           "command": "vs_tab_groups.closeTabGroup",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
-          "group": "vs_tab_groups_2@1"
+          "group": "vs_tab_groups_3@1"
         },
         {
           "command": "vs_tab_groups.editTabGroupIcon",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
-          "group": "vs_tab_groups_3@0"
+          "group": "vs_tab_groups_4@0"
         },
         {
           "command": "vs_tab_groups.removeTabGroup",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
-          "group": "vs_tab_groups_3@1"
+          "group": "vs_tab_groups_4@1"
         },
         {
-          "command": "vs_tab_groups.openTab",
+          "command": "vs_tab_groups.moveUp",
+          "when": "view == vs_tab_groups && viewItem == vstg_child_item",
+          "group": "inline@0"
+        },
+        {
+          "command": "vs_tab_groups.moveDown",
+          "when": "view == vs_tab_groups && viewItem == vstg_child_item",
+          "group": "inline@1"
+        },
+        {
+          "command": "vs_tab_groups.moveUp",
           "when": "view == vs_tab_groups && viewItem == vstg_child_item",
           "group": "vs_tab_groups_2@0"
         },
         {
-          "command": "vs_tab_groups.closeTab",
+          "command": "vs_tab_groups.moveDown",
           "when": "view == vs_tab_groups && viewItem == vstg_child_item",
           "group": "vs_tab_groups_2@1"
         },
         {
-          "command": "vs_tab_groups.removeTab",
+          "command": "vs_tab_groups.openTab",
           "when": "view == vs_tab_groups && viewItem == vstg_child_item",
           "group": "vs_tab_groups_3@0"
+        },
+        {
+          "command": "vs_tab_groups.closeTab",
+          "when": "view == vs_tab_groups && viewItem == vstg_child_item",
+          "group": "vs_tab_groups_3@1"
+        },
+        {
+          "command": "vs_tab_groups.removeTab",
+          "when": "view == vs_tab_groups && viewItem == vstg_child_item",
+          "group": "vs_tab_groups_4@0"
         }
       ],
       "editor/title": [
@@ -224,7 +264,7 @@
       },
       {
         "command": "vs_tab_groups.editTabGroupIcon",
-        "title": "Select Tab Group Icon"
+        "title": "Edit Tab Group Icon"
       },
       {
         "command": "vs_tab_groups.removeTabGroup",
@@ -232,6 +272,22 @@
         "icon": {
           "light": "resources/light/remove.png",
           "dark": "resources/dark/remove.png"
+        }
+      },
+      {
+        "command": "vs_tab_groups.moveUp",
+        "title": "Move Up",
+        "icon": {
+          "light": "resources/light/up.png",
+          "dark": "resources/dark/up.png"
+        }
+      },
+      {
+        "command": "vs_tab_groups.moveDown",
+        "title": "Move Down",
+        "icon": {
+          "light": "resources/light/down.png",
+          "dark": "resources/dark/down.png"
         }
       },
       {
