@@ -6,4 +6,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
-- Initial release
+## [1.1.0] - 2024-03-16
+
+### Added
+
+ - Option to expand and collapse tab groups;
+ - Option to reorder tabs and groups;
+ - Action to add open tab or all open tabs to a group or create a new one;
+
+## [1.0.0] - 2023-01-03
+
+Initial commit - base functionalities;
