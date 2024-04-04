@@ -23,13 +23,15 @@ export function validateWorkspace(): ValidationResult {
     return { hasError: false, error: "", workspaceDir: currentWorkSpace.uri.fsPath };
 }
 
-export function createQuickPickGroupsOptions(groupsList: TreeItem[]): any[] {
+export function createQuickPickGroupsOptions(groupsList: TreeItem[], allowNewGroup?: boolean): any[] {
     let groupLabels: any[] = [];
     groupsList.forEach((element) => groupLabels.push({ label: element.label }));
 
     const fileSeparator = { kind: QuickPickItemKind.Separator };
-    groupLabels.push(fileSeparator);
-    groupLabels.push({label: NEW_GROUP_LABEL});
+    if (allowNewGroup) {
+        groupLabels.push(fileSeparator);
+        groupLabels.push({label: NEW_GROUP_LABEL});
+    }
 
     return groupLabels;
 }
@@ -46,7 +48,7 @@ export function normalizePath(workDir: string, fileDir: string): string {
     return filePath;
 }
 
-export function getCurrentlyOpenFiles(workspaceDir: string) {
+export function getCurrentlyOpenFiles(workspaceDir: string): { label: string }[] {
     var result: any[] = [];
     window.tabGroups.all.forEach((group) =>
         group.tabs.forEach((tab) => {
