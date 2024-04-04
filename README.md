@@ -34,6 +34,11 @@ This extension contributes the following settings:
 
 ## Release Notes
 
+### 1.2.0
+Resolved:
+  - Option in the "More Actions..." button to sync the order of the open tabs to a tab group (if they belong to that group already);
+  - Bug where the name of the extension was not showing;
+
 ### 1.0.1
 
 Resolve requests:

@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.2.0] - 2024-04-04
+
+### Added
+
+  - Option in the "More Actions..." button to sync the order of the open tabs to a tab group (if they belong to that group already);
+
+### Fixed
+
+  - Bug where the name of the extension was not showing;
+
 ## [1.1.0] - 2024-03-16
 
 ### Added
