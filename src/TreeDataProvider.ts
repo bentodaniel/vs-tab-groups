@@ -53,6 +53,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         // Editor
         vscode.commands.registerCommand("vs_tab_groups.addEntryToGroup", (item) => this.addEntryToGroup(item));
         vscode.commands.registerCommand("vs_tab_groups.addAllToGroup", () => this.addAllOpenTabsToGroup());
+        vscode.commands.registerCommand("vs_tab_groups.syncGroupOrder", () => this.syncOpenTabsGroupOrder());
     }
 
     public setTreeView(treeView: vscode.TreeView<TreeItem>) {
@@ -273,7 +274,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             return;
         }
 
-        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data);
+        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data, true);
 
         vscode.window.showQuickPick(groupLabels, {
             canPickMany: false,
@@ -313,7 +314,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             return;
         }
 
-        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data);
+        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data, true);
 
         vscode.window.showQuickPick(groupLabels, {
             canPickMany: false,
@@ -342,6 +343,66 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
                 parent.add_child(newChild);
             }
+            this.m_onDidChangeTreeData.fire(undefined);
+
+            // Save the tree to the context
+            this.save();
+        });
+    }
+
+    /**
+     * Sync open tabs order to group order
+     */
+    async syncOpenTabsGroupOrder() {
+        const validationResult: ValidationResult = validateWorkspace();
+        if (validationResult.hasError) {
+            vscode.window.showErrorMessage(validationResult.error);
+            return;
+        }
+
+        let groupLabels: any[] = createQuickPickGroupsOptions(this.m_data);
+
+        vscode.window.showQuickPick(groupLabels, {
+            canPickMany: false,
+            placeHolder: "Select Tab Group",
+        })
+        .then(async (groupSelection) => {
+            if (!groupSelection) return;
+
+            let dataIndex = this.getItemIndexByParentLabel(groupSelection.label);
+
+            if (this.m_data[dataIndex].children.length == 0) {
+                vscode.window.showErrorMessage(`Can not reorder elements in group '${groupSelection.label}' because it has no elements.`);
+                return;
+            }
+            else if (this.m_data[dataIndex].children.length == 1) {
+                // No need to do anything
+                return;
+            }
+
+            const openFiles = getCurrentlyOpenFiles(validationResult.workspaceDir);
+
+            if (!this.m_data[dataIndex].children.some(elem => openFiles.some(file => file.label === elem.label))) {
+                vscode.window.showErrorMessage(`No tabs from group '${groupSelection.label}' are open in the editor.`);
+                return;
+            }
+
+            let newOrder: TreeItem[] = [];
+
+            for(let f of openFiles) {
+                const elemInGroup = this.m_data[dataIndex].children.find(elem => elem.label === f.label);
+
+                if (elemInGroup) {
+                    newOrder.push(elemInGroup);
+                }
+            }
+
+            // after ordering the open tabs, add the tabs that are not open
+            const elemsNotInNewGroup = this.m_data[dataIndex].children.filter(elem => !newOrder.some(newOrderElem => newOrderElem.label === elem.label));
+            newOrder = newOrder.concat(elemsNotInNewGroup);
+
+            this.m_data[dataIndex].children = newOrder;
+
             this.m_onDidChangeTreeData.fire(undefined);
 
             // Save the tree to the context
@@ -494,9 +555,6 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     /*** LOW LEVEL ***/
 
     private findParentOfItem(item: TreeItem): TreeItem[] {
-        console.log(item);
-        console.log(this.m_data);
-        console.log(this.m_data.filter(e => e.label === item.parentLabel))
         if (item.isRoot) {
             return this.m_data;
         }

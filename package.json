@@ -196,6 +196,9 @@
       "editor/title": [
         {
           "command": "vs_tab_groups.addAllToGroup"
+        },
+        {
+          "command": "vs_tab_groups.syncGroupOrder"
         }
       ],
       "editor/title/context": [
@@ -313,6 +316,10 @@
       {
         "command": "vs_tab_groups.addAllToGroup",
         "title": "Add All Open Tabs to Tab Group"
+      },
+      {
+        "command": "vs_tab_groups.syncGroupOrder",
+        "title": "Sync Tab Group Order"
       }
     ]
   },
