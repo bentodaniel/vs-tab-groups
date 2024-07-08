@@ -39,6 +39,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         vscode.commands.registerCommand("vs_tab_groups.closeTabGroup", (item) => this.closeTabGroup(item));
         vscode.commands.registerCommand("vs_tab_groups.editTabGroupIcon", (item) => this.editTabGroupIcon(item));
         vscode.commands.registerCommand("vs_tab_groups.removeTabGroup", (item) => this.removeTabGroup(item));
+        vscode.commands.registerCommand("vs_tab_groups.editTabGroupName", (item) => this.editTabGroupName(item));
 
         // Low level, actions on tabs
         vscode.commands.registerCommand("vs_tab_groups.openTab", (item) => this.openTab(item));
@@ -530,6 +531,27 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
             this.m_onDidChangeTreeData.fire(undefined);
         }
+    }
+
+    /**
+     * Change the name of the group's root.
+     * @param item The item representing the root of the group.
+     */
+    async editTabGroupName(item: TreeItem) {
+        const input = await vscode.window.showInputBox({
+            prompt: "Type in the new name of the tab group.\n",
+        });
+
+        if (input && input !== "") {
+            if (this.labelExists(input)) {
+                vscode.window.showErrorMessage(`Can not have two tab groups with name '${input}'`);
+                return;
+            }
+
+            item.label = input
+            this.m_onDidChangeTreeData.fire(undefined);
+        }
+        this.save();
     }
 
     /**
