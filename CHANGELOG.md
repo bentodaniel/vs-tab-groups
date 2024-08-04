@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.3.0] - 2024-08-04
+
+### Added
+
+  - Option to rename Tab Groups;
+
 ## [1.2.0] - 2024-04-04
 
 ### Added

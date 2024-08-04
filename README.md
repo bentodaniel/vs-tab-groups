@@ -34,6 +34,10 @@ This extension contributes the following settings:
 
 ## Release Notes
 
+### 1.3.0
+Added:
+  - Option to rename Tab Groups;
+
 ### 1.2.0
 Resolved:
   - Option in the "More Actions..." button to sync the order of the open tabs to a tab group (if they belong to that group already);
