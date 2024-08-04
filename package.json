@@ -148,14 +148,19 @@
           "group": "vs_tab_groups_3@1"
         },
         {
-          "command": "vs_tab_groups.editTabGroupIcon",
+          "command": "vs_tab_groups.editTabGroupName",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
           "group": "vs_tab_groups_4@0"
         },
         {
-          "command": "vs_tab_groups.removeTabGroup",
+          "command": "vs_tab_groups.editTabGroupIcon",
           "when": "view == vs_tab_groups && viewItem == vstg_root_item",
           "group": "vs_tab_groups_4@1"
+        },
+        {
+          "command": "vs_tab_groups.removeTabGroup",
+          "when": "view == vs_tab_groups && viewItem == vstg_root_item",
+          "group": "vs_tab_groups_4@2"
         },
         {
           "command": "vs_tab_groups.moveUp",
@@ -268,6 +273,10 @@
       {
         "command": "vs_tab_groups.editTabGroupIcon",
         "title": "Edit Tab Group Icon"
+      },
+      {
+        "command": "vs_tab_groups.editTabGroupName",
+        "title": "Edit Tab Group Name"
       },
       {
         "command": "vs_tab_groups.removeTabGroup",
