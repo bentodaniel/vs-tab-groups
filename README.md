@@ -34,6 +34,10 @@ This extension contributes the following settings:
 
 ## Release Notes
 
+### 1.4.0
+Resolved:
+  - Multiple dependency vulnerabilities
+
 ### 1.3.0
 Added:
   - Option to rename Tab Groups;

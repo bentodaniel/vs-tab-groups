@@ -526,7 +526,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         if (iconSelection) {
             var index: number = defaultEmojis.indexOf(iconSelection, 0);
 
-            const p: string = path.join(__filename, "..", "..", "resources", `${icons[index]}_square.png`);
+            const p = vscode.Uri.file(path.join(__filename, "..", "..", "resources", `${icons[index]}_square.png`));
             item.iconPath = { light: p, dark: p };
 
             this.m_onDidChangeTreeData.fire(undefined);
